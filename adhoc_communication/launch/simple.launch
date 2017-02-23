@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+   
+<node pkg="adhoc_communication" type="adhoc_communication" name="adhoc_communication"/>
+      
+</launch>
