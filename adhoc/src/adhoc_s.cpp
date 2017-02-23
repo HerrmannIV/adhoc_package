@@ -8,7 +8,7 @@
 #include "adhoc_communication/SendAnything.h"
 #include "adhoc_communication/functions.h"
 
-#define MSG_TYPE_RECT 0x01
+//#define MSG_TYPE_RECT 0x01
 
 int main (int argc, char **argv){
 	
@@ -28,7 +28,7 @@ int main (int argc, char **argv){
 		std::string dst_robot;
 		nh.getParam("/dest_robot", dst_robot);
 		std::string msg = getSerializedMessage(rectangle);
-		adhoc_communication::sendMessage(rectangle, MSG_TYPE_RECT, dst_robot, "t_rectangle");
+		adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_robot, "t_rectangle");
 
 		loop_rate.sleep();
 
