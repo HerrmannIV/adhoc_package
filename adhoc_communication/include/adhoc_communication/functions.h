@@ -150,9 +150,11 @@ std::string getSerializedMessage(t message)
 
     return serializedMap;
 }
+#include "adhoc_communication/SendAnything.h"
+
 namespace adhoc_communication{
 template <class t>
-bool sendMessage(t message, int msg_type, std::string dst_robot, std::string topic){
+bool sendMessage(t message, uint8_t msg_type, std::string dst_robot, std::string topic){
     // setup Service
     ros::NodeHandle nh;
     ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendAnything>("send_anything");

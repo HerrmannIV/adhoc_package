@@ -9,7 +9,7 @@
 #ifndef HEADER_H_
 #define HEADER_H_
 
-#include "adhoc_messages/include.h"
+
 
 /*General includes*/
 #include "ros/ros.h"
@@ -51,9 +51,8 @@ using std::string;
 #include "adhoc_communication/CMgrDimensions.h"
 #include "adhoc_communication/CMgrRobotUpdate.h"
 
-#include "adhoc_messages/Rectangle.h"
-#include <adhoc_communication/AnyMsg.h>
-#include <adhoc_communication/AnyMsgWTopic.h>
+//#include "adhoc_messages/Rectangle.h"
+
 
 /* Custom SRV Types*/
 #include "adhoc_communication/ChangeMCMembership.h"
@@ -80,19 +79,15 @@ using std::string;
 #include "nav_msgs/Odometry.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/Twist.h"
+#define COMM
 
 #include <adhoc_communication/functions.h>
-//#include "adhoc_communication/functions.h"
-//#include "functions.h"
-//#include <functions.h>
-
 
 /*Defines for timers and retransmits)*/
 #include "defines.h"
-
-
 #include "EthernetFrame.h"
 #include "EthernetFrame.cpp"
+
 /*Struct defines*/
 #include "structs.h"
 
@@ -328,6 +323,8 @@ bool sendPacket(std::string &hostname_destination, std::string& payload, uint8_t
 void initRobotMacList(std::string* robot_mac);
 template<class message>
 void publishMessage(message m, string topic);
+#include "adhoc_customize/include.h"
+
 
 
 std::string getListAsString(std::list<uint32_t> l);

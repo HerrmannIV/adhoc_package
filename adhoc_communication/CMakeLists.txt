@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   message_generation
-  adhoc_messages
+  adhoc_customize
 )
 
 ## System dependencies are found with CMake's conventions
@@ -153,7 +153,7 @@ include_directories(include
 add_executable(adhoc_communication_node src/adhoc_communication.cpp)
 target_link_libraries(adhoc_communication_node ${catkin_LIBRARIES})
 add_dependencies(adhoc_communication_node adhoc_communication_gencpp)
-add_dependencies(adhoc_communication_node adhoc_messages_gencpp)
+add_dependencies(adhoc_communication_node adhoc_customize_gencpp)
 add_dependencies(adhoc_communication_node ${catkin_EXPORTED_TARGETS})
 #add_executable(communication_tester src/communication_tester.cpp)
 #target_link_libraries(communication_tester ${catkin_LIBRARIES})
@@ -202,7 +202,6 @@ COMMAND sudo chmod +s ../../../devel/lib/adhoc_communication/adhoc_communication
   # LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    #RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  #)
-MESSAGE ( "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO: " ${CATKIN_PACKAGE_INCLUDE_DESTINATION} )
 
 ## Mark cpp header files for installation
  install(DIRECTORY include/adhoc_communication/

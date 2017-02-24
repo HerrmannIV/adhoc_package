@@ -3155,7 +3155,8 @@ void publishPacket(Packet * p)
                 publishMessage(rect, p->topic_);
             }*/
             else if (p->data_type_ >= FRAME_DATA_TYPE_CUSTOM){
-                #include "adhoc_messages/publish.cpp"
+                publishCustomMessage(payload, p->topic_, p->data_type_);
+                //#include "adhoc_messages/publish.cpp"
                 /*
                 if (p->data_type_ == FRAME_DATA_TYPE_RECTANGLE){        
                     adhoc_messages::Rectangle rect;

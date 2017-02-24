@@ -61,8 +61,8 @@
   <build_depend>message_generation</build_depend>
   <run_depend>message_runtime</run_depend>
 
-  <build_depend>adhoc_messages</build_depend>
-  <run_depend>adhoc_messages</run_depend>
+  <build_depend>adhoc_customize</build_depend>
+  <run_depend>adhoc_customize</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

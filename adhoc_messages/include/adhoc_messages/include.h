@@ -1,3 +1,0 @@
-//Begin Custom with 0xF1, 0xF2...
-#define FRAME_DATA_TYPE_CUSTOM 0xf0
-#define FRAME_DATA_TYPE_RECTANGLE 0xf1
