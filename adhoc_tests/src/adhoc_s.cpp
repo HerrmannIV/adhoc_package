@@ -7,7 +7,7 @@ int main (int argc, char **argv){
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
 	
-	ros::Rate loop_rate(1);
+	ros::Rate loop_rate(1000);
 	int count = 0;
 
 	adhoc_customize::Rectangle rectangle;
@@ -24,10 +24,11 @@ int main (int argc, char **argv){
 		loop_rate.sleep();
 
 		if (i<=89) i++;
-		else i = 65;
+		else return 1; //i = 65;
 
 		rectangle.length = i;
-		rectangle.width = i;		
+		rectangle.width = i;
+
 	}
 	return 1;
 }

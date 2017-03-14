@@ -2,7 +2,7 @@
 #include "adhoc_customize/include.h"
 
 void rectangleCallback(const adhoc_customize::Rectangle::ConstPtr& msg){
-	ROS_INFO("I heard: [%d][%d]", msg->length, msg->width);
+	ROS_INFO("I heard: [%c][%c]", msg->length, msg->width);
 }
 
 int main(int argc, char **argv){
