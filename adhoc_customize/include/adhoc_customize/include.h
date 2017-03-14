@@ -23,6 +23,7 @@ void publishCustomMessage(std::string payload, std::string topic, uint8_t data_t
         std_msgs::String str;
         desializeObject((unsigned char*) payload.data(), payload.length(), &str);
         publishMessage(str, topic);
+        ROS_INFO("HERE");
     }
 
 }
