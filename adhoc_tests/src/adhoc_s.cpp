@@ -3,40 +3,42 @@
 #include "adhoc_communication/functions.h"
 #include "adhoc_communication/SendString.h"
 
-
 int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
-	int rate;
 
-	nh.getParam("/rate", rate);
-	ROS_INFO("sending at rate %d Hz", rate);
+	// get Parameters
+	int rate, loop, mode;
+	std::string dst_robot;
+	
+	nh.getParam("/sender/dest_robot", dst_robot);
+	nh.getParam("/sender/rate", rate);
+	nh.getParam("/sender/mode", mode);
+	nh.getParam("/sender/loop", loop);
+
+
+	ROS_INFO("sending [%d] times in mode [%d] to [%s] at loop_rate [%d] Hz", loop, mode, dst_robot.c_str(), rate);
 	ros::Rate loop_rate(rate);
-	int count = 0;
 
 	adhoc_customize::Rectangle rectangle;
 	int i = 0;
-	rectangle.length = i;
-	rectangle.width = i;
 
-	ros::Time begin = ros::Time::now();
-	
 	std::string longstring; 
+
+	// dummy is 1000Bytes
 	std::string dummy = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";//10 Byte
 	for(int k = 0; k<100; k++)
 		longstring += dummy;
 
+	ros::Time begin = ros::Time::now();
 
 	while(ros::ok()){
-		std::string dst_robot;
-		nh.getParam("/dest_robot", dst_robot);
-		//adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_robot, "t_rectangle");
-		if(false){
+		if(mode==1){
 			std_msgs::String str;
 			str.data = longstring;
 			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_robot, "t_String");
-		}else{		
+		}else if(mode==2){		
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
 	    
@@ -51,22 +53,24 @@ int main (int argc, char **argv){
 		    }else{
 		        ROS_ERROR("Failed to call service");
 		    } 
-		}
-		
+		}else if(mode==3){
+			rectangle.length = i;
+			rectangle.width = i;
+			adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_robot, "t_rectangle");
+		}	    
 
-	    loop_rate.sleep();
-
-		if (i<=3) i++;
+		if (i<loop) 
+			i++;
 		else {
 			ros::Time end = ros::Time::now();
 			ros::Duration dur = end-begin;
-			ROS_INFO("dur: %f",dur.toSec());
+			ROS_INFO("duration: %f sec", dur.toSec());
 
 			return 1; //i = 65;
 		}
 		rectangle.length = i;
 		rectangle.width = i;
-
+		loop_rate.sleep();
 	}
 	return 1;
 }
