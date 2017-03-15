@@ -1296,7 +1296,7 @@ bool gotAck(AckLinkFrame* inc_frame)
 #ifdef PERFORMANCE_LOGGING_UC_LINK_FRAMES
             Logging::logUcLinkTransmission(*i);
 #endif
-            ROS_INFO("GOT ACK OF LINK FRAME: ID[%u] SOURCE MAC[%s] TYPE[%s]", (*i).frame_id, getMacAsStr((*i).mac).c_str(), frame_types[(*i).type].c_str());
+            //ROS_INFO("GOT ACK OF LINK FRAME: ID[%u] SOURCE MAC[%s] TYPE[%s]", (*i).frame_id, getMacAsStr((*i).mac).c_str(), frame_types[(*i).type].c_str());
             unack_link_frames_l.remove(*i);
             return true;
         }
