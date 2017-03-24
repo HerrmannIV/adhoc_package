@@ -12,20 +12,21 @@ enum Mode{
 	STUD
 };
 
-std::string convertToPrefixString(int input){
-	// convert input to string
-	std::ostringstream Stream;
-    Stream << input;
-    // length of inputstring aka Number of Chars
-    std::string len_s(Stream.str());
+void convertToPrefixString(int input, std::string &output){
+		// convert input to string
+		std::ostringstream Stream;
+	    Stream << input;
+		std::string len_s = Stream.str();
+	
+		std::string prefix = ""; int crop=0;
 
-	std::string prefix; int crop;
-	// set prefix and crop amount
-	if (input >=1000) { prefix = "k"; crop=3;}
-	if (input >=1000000) { prefix = "M"; crop=6;}
-	// crop 
-	len_s.erase(len_s.end()-crop, len_s.end());
-	return len_s + prefix;
+		// set prefix and crop amount
+		if (input >=1000) { prefix = "k"; crop=3;}
+		if (input >=1000000) { prefix = "M"; crop=6;}
+
+		// crop
+		len_s.erase(len_s.end()-crop, len_s.end());
+		output = len_s + prefix;
 }
 
 int main (int argc, char **argv){
@@ -41,7 +42,7 @@ int main (int argc, char **argv){
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
-	ROS_INFO("sending [%d] times in mode [%d] to [%s] at loop_rate [%d] Hz", loop, mode_i, dst_robot.c_str(), rate);
+	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s]", loop, mode_i, rate, strLen, dst_robot.c_str());
 	Mode mode = static_cast<Mode>(mode_i);
 	ros::Rate loop_rate(rate);
 	adhoc_customize::Rectangle rectangle;
@@ -52,7 +53,8 @@ int main (int argc, char **argv){
 	std::string dummy = "ABCDEFGHIJ";
 	for(int k = 0; k<strLen; k++)
 		longstring += dummy;
-	std::string size= convertToPrefixString(longstring.length());	
+	std::string size;
+	convertToPrefixString(longstring.length(), size);	
 	std::cout << "Stringlength: "<< size << "Bytes\n";
 
 	ros::Time begin = ros::Time::now();
