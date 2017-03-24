@@ -168,7 +168,7 @@ bool sendMessage(t message, uint8_t msg_type, std::string dst_robot, std::string
 
     // call Service
     if (client.call(srv)){
-        ROS_INFO("Response.status: %d", srv.response.status);
+        //ROS_INFO("Response.status: %d", srv.response.status);
         return true;
     }else{
         ROS_ERROR("Failed to call service");

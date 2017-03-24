@@ -5,8 +5,10 @@
 //Begin Custom with 0xF1, 0xF2...
 #define FRAME_DATA_TYPE_RECTANGLE 0xf1
 #define FRAME_DATA_TYPE_STRING 0xf2
+#define FRAME_DATA_TYPE_STUDENT 0xf3
 
 #include "adhoc_customize/Rectangle.h"
+#include "adhoc_customize/Student.h"
 //#include "adhoc_messages/Square.h"
 
 #include "std_msgs/String.h"
@@ -26,5 +28,11 @@ void publishCustomMessage(std::string payload, std::string topic, uint8_t data_t
         ROS_INFO("HERE");
     }
 
+    if (data_type == FRAME_DATA_TYPE_STRING){        
+        adhoc_customize::Student stud;
+        desializeObject((unsigned char*) payload.data(), payload.length(), &stud);
+        publishMessage(stud, topic);
+        ROS_INFO("HERE2");
+    }
 }
 #endif

@@ -2,71 +2,99 @@
 #include "adhoc_customize/include.h"
 #include "adhoc_communication/functions.h"
 #include "adhoc_communication/SendString.h"
+#include <iostream> 
+
+enum Mode{
+	PING,
+	STRING_SERIALIZE,
+	STRING_SERVICE,
+	RECT,
+	STUD
+};
+
+std::string convertToPrefixString(int input){
+	// convert input to string
+	std::ostringstream Stream;
+    Stream << input;
+    // length of inputstring aka Number of Chars
+    std::string len_s(Stream.str());
+
+	std::string prefix; int crop;
+	// set prefix and crop amount
+	if (input >=1000) { prefix = "k"; crop=3;}
+	if (input >=1000000) { prefix = "M"; crop=6;}
+	// crop 
+	len_s.erase(len_s.end()-crop, len_s.end());
+	return len_s + prefix;
+}
 
 int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
 
-	// get Parameters
-	int rate, loop, mode,strLen;
-	std::string dst_robot;
-	
-	nh.getParam("/sender/dest_robot", dst_robot);
+	// get Parameters and print INFO
+	int rate, loop, mode_i,strLen;
+	std::string dst_robot;	
+	nh.getParam("/sender/dst_robot", dst_robot);
 	nh.getParam("/sender/rate", rate);
-	nh.getParam("/sender/mode", mode);
+	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
-
-	ROS_INFO("sending [%d] times in mode [%d] to [%s] at loop_rate [%d] Hz", loop, mode, dst_robot.c_str(), rate);
+	ROS_INFO("sending [%d] times in mode [%d] to [%s] at loop_rate [%d] Hz", loop, mode_i, dst_robot.c_str(), rate);
+	Mode mode = static_cast<Mode>(mode_i);
 	ros::Rate loop_rate(rate);
-
 	adhoc_customize::Rectangle rectangle;
 	int i = 0;
 
-	
-
-	// dummy is 10Bytes, make longstring 100kB
+	// dummy is 10Bytes, make longstring
 	std::string longstring;
-	std::string dummy = "XXXXXXXXXX";
+	std::string dummy = "ABCDEFGHIJ";
 	for(int k = 0; k<strLen; k++)
 		longstring += dummy;
-	std::cout << "Stringlength: ["<< longstring.length() << "] Bytes\n";
+	std::string size= convertToPrefixString(longstring.length());	
+	std::cout << "Stringlength: "<< size << "Bytes\n";
+
 	ros::Time begin = ros::Time::now();
 
 	while(ros::ok() && i<loop){
-
-		if(mode==1){
+		i++;
+		if(mode==STRING_SERIALIZE){
 			// send String with my own Serialization method
 			std_msgs::String str;
 			str.data = longstring;
 			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_robot, "t_String");
-		}else if(mode==2){
-			// send String with native sendString Service
+		}else if(mode==STRING_SERVICE || mode==PING){
+			// send String with native sendString Service or empty string as Ping
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
-	    
-	    	// fill Service-Fields
-		    srv.request.topic = "t_string";
-		    srv.request.dst_robot = dst_robot;
-		    srv.request.data = longstring;
+	    	bool ping = (mode == PING);
 
+	    	// fill Service-Fields
+		    srv.request.topic = ping ? "t_ping": "t_string";
+		    srv.request.data = ping ? "" : longstring;
+		    srv.request.dst_robot = dst_robot;
+		    		    
 		    // call Service
 		    if (client.call(srv)){
-		        ROS_INFO("Response.status: %d", srv.response.status);
+		        //ROS_INFO("Response.status: %d", srv.response.status);
 		    }else{
 		        ROS_ERROR("Failed to call service");
 		    } 
-		}else if(mode==3){
+		}else if(mode==RECT){
 			// send Rectangle
 			rectangle.length = i;
 			rectangle.width = i;
 			adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_robot, "t_rectangle");
+		}else if(mode==STUD){
+			adhoc_customize::Student stud;
+			stud.name = "Rau";
+			stud.vorname = "Kai";			
+			stud.immatrikuliert = true;
+			stud.matnr = 123;
+			adhoc_communication::sendMessage(stud, FRAME_DATA_TYPE_STUDENT, dst_robot, "t_stud");
 		}	    
 
-		i++;
-		rectangle.length = i;
-		rectangle.width = i;
 		loop_rate.sleep();
 	}
 	ros::Time end = ros::Time::now();

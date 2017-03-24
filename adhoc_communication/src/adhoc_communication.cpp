@@ -732,6 +732,13 @@ bool gotAckRoutedFrame(routing_entry& route)
 bool sendPacket(std::string &hostname_destination, std::string& payload, uint8_t data_type_, std::string& topic)
 {
     packet_id_++;
+    std::cout <<std::hex << "Payload1: [" ;
+    for (int i = 0; i < (sizeof payload)+20; i++)
+    {
+        std::cout << std::hex << "0x" << static_cast<int>(payload[i]) << " ";
+    }
+    std::cout << "]\n";    
+    std::cout <<std::hex << "Payload2: [" << payload << "]\n";
 
     /* Description:
      * Send a routed frame.
