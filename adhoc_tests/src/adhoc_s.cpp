@@ -2,6 +2,8 @@
 #include "adhoc_customize/include.h"
 #include "adhoc_communication/functions.h"
 #include "adhoc_communication/SendString.h"
+#include "adhoc_communication/RecvString.h"
+
 #include <iostream> 
 
 enum Mode{
@@ -12,21 +14,29 @@ enum Mode{
 	STUD
 };
 
+ros::Time beforePing;
+
 void convertToPrefixString(int input, std::string &output){
-		// convert input to string
-		std::ostringstream Stream;
-	    Stream << input;
-		std::string len_s = Stream.str();
-	
-		std::string prefix = ""; int crop=0;
+	// convert input to string
+	std::ostringstream Stream;
+    Stream << input;
+	std::string len_s = Stream.str();
 
-		// set prefix and crop amount
-		if (input >=1000) { prefix = "k"; crop=3;}
-		if (input >=1000000) { prefix = "M"; crop=6;}
+	std::string prefix = ""; int crop=0;
 
-		// crop
-		len_s.erase(len_s.end()-crop, len_s.end());
-		output = len_s + prefix;
+	// set prefix and crop amount
+	if (input >=1000) { prefix = "k"; crop=3;}
+	if (input >=1000000) { prefix = "M"; crop=6;}
+
+	// crop
+	len_s.erase(len_s.end()-crop, len_s.end());
+	output = len_s + prefix;
+}
+
+void pingCallback(const adhoc_communication::RecvString::ConstPtr& msg){
+	ros::Time afterPing = ros::Time::now();
+	ros::Duration ping = afterPing - beforePing;
+	ROS_INFO("Ping duration: [%f] sec", ping.toSec());
 }
 
 int main (int argc, char **argv){
@@ -44,7 +54,7 @@ int main (int argc, char **argv){
 	nh.getParam("/sender/strLen", strLen);
 	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s]", loop, mode_i, rate, strLen, dst_robot.c_str());
 	Mode mode = static_cast<Mode>(mode_i);
-	ros::Rate loop_rate(rate);
+	//ros::Rate loop_rate(rate);
 	adhoc_customize::Rectangle rectangle;
 	int i = 0;
 
@@ -57,6 +67,12 @@ int main (int argc, char **argv){
 	convertToPrefixString(longstring.length(), size);	
 	std::cout << "Stringlength: "<< size << "Bytes\n";
 
+	ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
+
+
+
+
+
 	ros::Time begin = ros::Time::now();
 
 	while(ros::ok() && i<loop){
@@ -67,22 +83,25 @@ int main (int argc, char **argv){
 			str.data = longstring;
 			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_robot, "t_String");
 		}else if(mode==STRING_SERVICE || mode==PING){
+			bool ping = (mode == PING);
 			// send String with native sendString Service or empty string as Ping
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
-	    	bool ping = (mode == PING);
-
+	    	
 	    	// fill Service-Fields
 		    srv.request.topic = ping ? "t_ping": "t_string";
 		    srv.request.data = ping ? "" : longstring;
 		    srv.request.dst_robot = dst_robot;
 		    		    
 		    // call Service
+		    if(ping) ros::Time beforePing = ros::Time::now();
+
 		    if (client.call(srv)){
 		        //ROS_INFO("Response.status: %d", srv.response.status);
 		    }else{
 		        ROS_ERROR("Failed to call service");
-		    } 
+		    }
+
 		}else if(mode==RECT){
 			// send Rectangle
 			rectangle.length = i;
@@ -97,7 +116,7 @@ int main (int argc, char **argv){
 			adhoc_communication::sendMessage(stud, FRAME_DATA_TYPE_STUDENT, dst_robot, "t_stud");
 		}	    
 
-		loop_rate.sleep();
+		//loop_rate.sleep();
 	}
 	ros::Time end = ros::Time::now();
 	ros::Duration dur = end-begin;
