@@ -7,6 +7,8 @@
 
 #include <iostream> 
 #include <fstream>
+#include <string> 
+
 
 enum Mode{
 	PING,
@@ -94,10 +96,12 @@ int main (int argc, char **argv){
 			// send String with native sendString Service or empty string as Ping
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
-	    	
+	    	std::stringstream ss;
+	    	ss << i;
+	    	std::string returnTopic = "top_ping" + ss.str();
 	    	// fill Service-Fields
 		    srv.request.topic = ping ? "t_ping" : "t_string";
-		    srv.request.data = ping ? "p" : longstring;
+		    srv.request.data = ping ? returnTopic : longstring;
 		    srv.request.dst_robot = dst_car;
 		    		    
 		    // call Service
@@ -112,11 +116,14 @@ int main (int argc, char **argv){
 		        ROS_ERROR("Failed to call PING/STRING-service");
 		    }
 		    if (ping){
-			ros::topic::waitForMessage<adhoc_communication::RecvString>("t_ping");
+			ros::topic::waitForMessage<adhoc_communication::RecvString>(returnTopic , ros::Duration(2));
 			ros::Time afterPing = ros::Time::now();
-			ros::Duration ping = afterPing - beforePing;
-			ROS_INFO("Ping duration: [%f] sec", ping.toSec());
-			myfile << ping.toSec() <<"\n";
+			ros::Duration pingTime = afterPing - beforePing;
+			float pingTimeSec = pingTime.toSec();
+			if (pingTimeSec > 1.5)
+				ROS_INFO("Ping Timeout: [%f] sec", pingTimeSec);
+			else
+				myfile << pingTimeSec <<"\n";
 
 		}
 
@@ -133,7 +140,7 @@ int main (int argc, char **argv){
 			stud.matnr = 123;
 			adhoc_communication::sendMessage(stud, FRAME_DATA_TYPE_STUDENT, dst_car, "t_stud");
 		}
-		if (ping) loop_rate.sleep();	    
+		//if (ping) loop_rate.sleep();	    
 	}	
 
 	ros::Time end = ros::Time::now();
