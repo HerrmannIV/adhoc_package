@@ -1,10 +1,12 @@
 #include "ros/ros.h"
+#include "ros/topic.h"
 #include "adhoc_customize/include.h"
 #include "adhoc_communication/functions.h"
 #include "adhoc_communication/SendString.h"
 #include "adhoc_communication/RecvString.h"
 
 #include <iostream> 
+#include <fstream>
 
 enum Mode{
 	PING,
@@ -15,6 +17,8 @@ enum Mode{
 };
 
 ros::Time beforePing;
+bool recvPing, ping;
+std::ofstream myfile;
 
 void convertToPrefixString(int input, std::string &output){
 	// convert input to string
@@ -37,6 +41,7 @@ void pingCallback(const adhoc_communication::RecvString::ConstPtr& msg){
 	ros::Time afterPing = ros::Time::now();
 	ros::Duration ping = afterPing - beforePing;
 	ROS_INFO("Ping duration: [%f] sec", ping.toSec());
+	recvPing=true;
 }
 
 int main (int argc, char **argv){
@@ -46,15 +51,16 @@ int main (int argc, char **argv){
 
 	// get Parameters and print INFO
 	int rate, loop, mode_i,strLen;
-	std::string dst_robot;	
-	nh.getParam("/sender/dst_robot", dst_robot);
+	std::string dst_car, filename;	
+	nh.getParam("/sender/dst_car", dst_car);
 	nh.getParam("/sender/rate", rate);
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
-	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s]", loop, mode_i, rate, strLen, dst_robot.c_str());
+	nh.getParam("/sender/filename", filename);
+	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s]", loop, mode_i, rate, strLen, dst_car.c_str());
 	Mode mode = static_cast<Mode>(mode_i);
-	//ros::Rate loop_rate(rate);
+	ros::Rate loop_rate(rate);
 	adhoc_customize::Rectangle rectangle;
 	int i = 0;
 
@@ -67,10 +73,12 @@ int main (int argc, char **argv){
 	convertToPrefixString(longstring.length(), size);	
 	std::cout << "Stringlength: "<< size << "Bytes\n";
 
-	ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
-
-
-
+	//ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
+	ping = (mode == PING);
+	if(ping){
+		std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/" + filename + ".csv");
+  		myfile.open (fname.c_str());//"/home/pses/" + filename + ".csv");
+	}
 
 
 	ros::Time begin = ros::Time::now();
@@ -81,47 +89,58 @@ int main (int argc, char **argv){
 			// send String with my own Serialization method
 			std_msgs::String str;
 			str.data = longstring;
-			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_robot, "t_String");
-		}else if(mode==STRING_SERVICE || mode==PING){
-			bool ping = (mode == PING);
+			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_car, "t_String");
+		}else if(mode==STRING_SERVICE || ping){
 			// send String with native sendString Service or empty string as Ping
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
 	    	
 	    	// fill Service-Fields
-		    srv.request.topic = ping ? "t_ping": "t_string";
-		    srv.request.data = ping ? "" : longstring;
-		    srv.request.dst_robot = dst_robot;
+		    srv.request.topic = ping ? "t_ping" : "t_string";
+		    srv.request.data = ping ? "p" : longstring;
+		    srv.request.dst_robot = dst_car;
 		    		    
 		    // call Service
-		    if(ping) ros::Time beforePing = ros::Time::now();
+		    if(ping) {
+		    	beforePing = ros::Time::now();
+		    	//ROS_INFO("BeforeX: [%f] sec", beforePing.toSec());
+		    }
 
 		    if (client.call(srv)){
 		        //ROS_INFO("Response.status: %d", srv.response.status);
 		    }else{
-		        ROS_ERROR("Failed to call service");
+		        ROS_ERROR("Failed to call PING/STRING-service");
 		    }
+		    if (ping){
+			ros::topic::waitForMessage<adhoc_communication::RecvString>("t_ping");
+			ros::Time afterPing = ros::Time::now();
+			ros::Duration ping = afterPing - beforePing;
+			ROS_INFO("Ping duration: [%f] sec", ping.toSec());
+			myfile << ping.toSec() <<"\n";
+
+		}
 
 		}else if(mode==RECT){
 			// send Rectangle
 			rectangle.length = i;
 			rectangle.width = i;
-			adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_robot, "t_rectangle");
+			adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_car, "t_rectangle");
 		}else if(mode==STUD){
 			adhoc_customize::Student stud;
 			stud.name = "Rau";
 			stud.vorname = "Kai";			
 			stud.immatrikuliert = true;
 			stud.matnr = 123;
-			adhoc_communication::sendMessage(stud, FRAME_DATA_TYPE_STUDENT, dst_robot, "t_stud");
-		}	    
+			adhoc_communication::sendMessage(stud, FRAME_DATA_TYPE_STUDENT, dst_car, "t_stud");
+		}
+		if (ping) loop_rate.sleep();	    
+	}	
 
-		//loop_rate.sleep();
-	}
 	ros::Time end = ros::Time::now();
 	ros::Duration dur = end-begin;
 	ROS_INFO("duration: %f sec", dur.toSec());
 
+	myfile.close();
+
 	return 1;
 }
-
