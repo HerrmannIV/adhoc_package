@@ -39,8 +39,13 @@ void pingCallback(const adhoc_communication::RecvString::ConstPtr& msg){
 	ROS_INFO("I heard a Ping");
 	ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	adhoc_communication::SendString srv;
+<<<<<<< HEAD
     srv.request.topic = msg->data;
     srv.request.data = "ping";
+=======
+    srv.request.topic = "t_ping";
+    srv.request.data = "p";
+>>>>>>> 7b29cd9a82f4d7096b991177b567d7815577e7bf
     srv.request.dst_robot = msg->src_robot;
     		    
     // call Service
