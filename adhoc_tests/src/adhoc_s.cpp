@@ -20,7 +20,10 @@ enum Mode{
 
 ros::Time beforePing;
 bool recvPing, ping;
-std::ofstream myfile;
+std::ofstream outFile;
+adhoc_customize::Rectangle rectangle;
+std::string longstring;
+
 
 void convertToPrefixString(int input, std::string &output){
 	// convert input to string
@@ -62,30 +65,54 @@ int main (int argc, char **argv){
 	nh.getParam("/sender/strLen", strLen);
 	nh.getParam("/sender/filename", filename);
 	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep);
+	//std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/" + filename + ".csv");
+	
+	
 	Mode mode = static_cast<Mode>(mode_i);
 	ros::Rate loop_rate(rate);
-	adhoc_customize::Rectangle rectangle;
-	int i = 0;
+	ping = (mode == PING);
 
 	// dummy is 10Bytes, make longstring
-	std::string longstring;
-	std::string dummy = "ABCDEFGHIJ";
-	for(int k = 0; k<strLen; k++)
-		longstring += dummy;
-	std::string size;
-	convertToPrefixString(longstring.length(), size);	
-	std::cout << "Stringlength: "<< size << "Bytes\n";
-
-	//ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
-	ping = (mode == PING);
-	if(ping){
-		std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/" + filename + ".csv");
-  		myfile.open (fname.c_str());//"/home/pses/" + filename + ".csv");
+	if (mode == STRING_SERIALIZE || mode == STRING_SERVICE){
+		std::string dummy = "ABCDEFGHIJ";
+		for(int k = 0; k<strLen; k++)
+			longstring += dummy;
+		std::string size;
+		convertToPrefixString(longstring.length(), size);	
+		std::cout << "Stringlength: "<< size << "Bytes\n";
 	}
+	// if ping, save Output to file
 
+	std::ostringstream confStringStream;
+	confStringStream	//<< "loop: " << loop
+						<< "m" << mode_i
+						<< "r" << rate
+						//<< "; length/10: " << strLen
+						//<< "; Dest: " << dst_car
+						<< "s" << sleep;
 
+	std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
+	std::ifstream inFile(fname.c_str());
+	std::string inputLine;
+	if (inFile.is_open()){
+		getline(inFile, inputLine);
+		inFile.close();
+		std::cout << "|" << inputLine << "|\n";
+		std::cout << "|" << confStringStream.str() << "|\n";
+		if (confStringStream.str().compare(inputLine) == 0)
+			ROS_INFO("OutputFile same Config");
+		else{ 
+			return 0;
+		}
+	}else{
+		ROS_INFO("Not open");
+		outFile.open (fname.c_str());
+		outFile << confStringStream.str() << "\n";
+		outFile.close();		
+	}
+	outFile.open (fname.c_str(), std::ios_base::app);
+	int i = 0;
 	ros::Time begin = ros::Time::now();
-
 	while(ros::ok() && i<loop){
 		i++;
 		if(mode==PING){
@@ -111,7 +138,8 @@ int main (int argc, char **argv){
 			if (pingTimeSec > 1.5)
 				ROS_INFO("Ping Timeout: [%f] sec", pingTimeSec);
 			else
-				myfile << pingTimeSec <<"\n";
+				outFile << pingTimeSec <<";";
+			std::cout << pingTimeSec << "\n";
 
 		}else if(mode==STRING_SERIALIZE){
 			// send String with my own Serialization method
@@ -151,7 +179,8 @@ int main (int argc, char **argv){
 	ros::Duration dur = end-begin;
 	ROS_INFO("duration: %f sec", dur.toSec());
 
-	myfile.close();
+	outFile << "\n";
+	outFile.close();
 
 	return 1;
 }
