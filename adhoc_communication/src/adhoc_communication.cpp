@@ -3163,7 +3163,7 @@ void publishPacket(Packet * p)
                 publishMessage(rect, p->topic_);
             }*/
             else if (p->data_type_ >= FRAME_DATA_TYPE_CUSTOM){
-                publishCustomMessage(payload, p->topic_, p->data_type_);
+                publishCustomMessage(payload, p->topic_, p->data_type_, p->hostname_source_);
                 //#include "adhoc_messages/publish.cpp"
                 /*
                 if (p->data_type_ == FRAME_DATA_TYPE_RECTANGLE){        

@@ -48,7 +48,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    Rectangle.msg
    Student.msg
-
+  RecvTime.msg
  )
 
 ## Generate services in the 'srv' folder

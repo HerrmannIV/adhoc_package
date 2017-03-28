@@ -8,6 +8,7 @@
 #include <iostream> 
 #include <fstream>
 #include <string> 
+#include <sys/time.h>
 
 
 enum Mode{
@@ -15,14 +16,17 @@ enum Mode{
 	STRING_SERIALIZE,
 	STRING_SERVICE,
 	RECT,
-	STUD
+	STUD,
+	PING_ALT
 };
 
 ros::Time beforePing;
-bool recvPing, ping;
+bool ping;
 std::ofstream outFile;
 adhoc_customize::Rectangle rectangle;
 std::string longstring;
+struct timeval tBefore, tAfter;
+double pingTimeD;
 
 
 void convertToPrefixString(int input, std::string &output){
@@ -42,17 +46,19 @@ void convertToPrefixString(int input, std::string &output){
 	output = len_s + prefix;
 }
 
-void pingCallback(const adhoc_communication::RecvString::ConstPtr& msg){
+void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	ros::Time afterPing = ros::Time::now();
+	ros::Time beforePing = recvTime->time;
 	ros::Duration ping = afterPing - beforePing;
 	ROS_INFO("Ping duration: [%f] sec", ping.toSec());
-	recvPing=true;
+	
 }
 
 int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
+	ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
 
 	// get Parameters and print INFO
 	int rate, loop, mode_i,strLen, sleep;
@@ -115,6 +121,12 @@ int main (int argc, char **argv){
 	ros::Time begin = ros::Time::now();
 	while(ros::ok() && i<loop){
 		i++;
+		if(mode==PING_ALT){
+			std_msgs::Time timeMsg;
+			timeMsg.data = ros::Time::now();
+			adhoc_communication::sendMessage(timeMsg, FRAME_DATA_TYPE_TIME, dst_car, "t_ping");
+		}
+
 		if(mode==PING){
 			// setup ROS-stuff
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
@@ -128,18 +140,29 @@ int main (int argc, char **argv){
 		    
 		    //PING
 		    beforePing = ros::Time::now();
+		    gettimeofday(&tBefore,NULL);
+		    
 		    if (!client.call(srv)) ROS_ERROR("Failed to call PING/STRING-service");
 			ros::topic::waitForMessage<adhoc_communication::RecvString>(returnTopic , ros::Duration(2));
+			
+			gettimeofday(&tAfter,NULL);
 			ros::Time afterPing = ros::Time::now();
 
 			// calc Latency and output (to file)
 			ros::Duration pingTime = afterPing - beforePing;
+
+			pingTimeD = (tAfter.tv_sec - tBefore.tv_sec) * 1000.0;
+			pingTimeD += (tAfter.tv_usec - tBefore.tv_usec) / 1000.0;
+			/*
 			float pingTimeSec = pingTime.toSec();
 			if (pingTimeSec > 1.5)
 				ROS_INFO("Ping Timeout: [%f] sec", pingTimeSec);
 			else
 				outFile << pingTimeSec <<";";
+
 			std::cout << pingTimeSec << "\n";
+			*/
+			std::cout << pingTimeD << "\n";
 
 		}else if(mode==STRING_SERIALIZE){
 			// send String with my own Serialization method
