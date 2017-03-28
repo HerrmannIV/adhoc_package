@@ -46,7 +46,7 @@ void convertToPrefixString(int input, std::string &output){
 	output = len_s + prefix;
 }
 
-void pingCallbackS(const adhoc_customize::RecvTime::ConstPtr& recvTime){
+void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	ROS_INFO("Received Ping Back");
 	ros::Time afterPing = ros::Time::now();
 	ros::Time beforePing = recvTime->time;
@@ -54,14 +54,23 @@ void pingCallbackS(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	float pingTimeSec = pingTime.toSec();
 	ROS_INFO("Ping duration: [%f] sec", pingTimeSec);
 	outFile << pingTimeSec <<";";
-	received=true;
+}
+void sendCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
+	ROS_INFO("Received String Answer");
+	ros::Time afterSend = ros::Time::now();
+	ros::Time beforeSend = recvTime->time;
+	ros::Duration sendTime = afterSend - beforeSend;
+	float sendTimeSec = sendTime.toSec();
+	ROS_INFO("Send duration: [%f] sec", sendTimeSec);
+	outFile << sendTimeSec <<";";
 }
 
 int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
-	ros::Subscriber sub_ping = nh.subscribe("t_pingr", 1000, pingCallbackS);  
+	ros::Subscriber sub_ping = nh.subscribe("t_pingr", 1000, pingCallback);  
+	ros::Subscriber sub_string = nh.subscribe("t_str", 1000, sendCallback);  
 	ros::AsyncSpinner  spinner(1);
 	spinner.start();
 	// get Parameters and print INFO
@@ -126,50 +135,12 @@ int main (int argc, char **argv){
 			std_msgs::Time timeMsg;
 			timeMsg.data = ros::Time::now();
 			adhoc_communication::sendMessage(timeMsg, FRAME_DATA_TYPE_TIME, dst_car, "t_ping");
-		}
-
-		if(mode==PING){/*
-			// setup ROS-stuff
-			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
-	    	adhoc_communication::SendString srv;
-	    	// setup message, data is topic of returned ping
-	    	std::stringstream ss; ss << i;
-	    	std::string returnTopic = "top_ping" + ss.str();
-		    srv.request.topic = "t_ping";
-		    srv.request.data = returnTopic;
-		    srv.request.dst_robot = dst_car;
-		    
-		    //PING
-		    beforePing = ros::Time::now();
-		    gettimeofday(&tBefore,NULL);
-		    
-		    if (!client.call(srv)) ROS_ERROR("Failed to call PING/STRING-service");
-			ros::topic::waitForMessage<adhoc_communication::RecvString>(returnTopic , ros::Duration(2));
-			
-			gettimeofday(&tAfter,NULL);
-			ros::Time afterPing = ros::Time::now();
-
-			// calc Latency and output (to file)
-			ros::Duration pingTime = afterPing - beforePing;
-
-			pingTimeD = (tAfter.tv_sec - tBefore.tv_sec) * 1000.0;
-			pingTimeD += (tAfter.tv_usec - tBefore.tv_usec) / 1000.0;
-			/*
-			float pingTimeSec = pingTime.toSec();
-			if (pingTimeSec > 1.5)
-				ROS_INFO("Ping Timeout: [%f] sec", pingTimeSec);
-			else
-				outFile << pingTimeSec <<";";
-
-			std::cout << pingTimeSec << "\n";
-			*/
-			//std::cout << pingTimeD << "\n";
-
 		}else if(mode==STRING_SERIALIZE){
 			// send String with my own Serialization method
-			std_msgs::String str;
-			str.data = longstring;
-			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_car, "t_stringSerialized");
+			adhoc_customize::StringWTime strWTime;
+			strWTime.data = longstring;
+			strWTime.time = ros::Time::now();
+			adhoc_communication::sendMessage(strWTime, FRAME_DATA_TYPE_STRING, dst_car, "t_stringSerializedWTime");
 		}else if(mode==STRING_SERVICE){
 			// send String with native sendString Service 
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
@@ -180,7 +151,7 @@ int main (int argc, char **argv){
 		    srv.request.dst_robot = dst_car;
 		    		    
 		    // call Service
-		    if (!client.call(srv)) ROS_ERROR("Failed to call PING/STRING-service");
+		    if (!client.call(srv)) ROS_ERROR("Failed to call STRING-service");
 
 		}else if(mode==RECT){
 			// send Rectangle
@@ -205,6 +176,5 @@ int main (int argc, char **argv){
 
 	outFile << "\n";
 	outFile.close();
-	//while(!received){}
 	return 1;
 }

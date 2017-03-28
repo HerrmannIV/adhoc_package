@@ -7,11 +7,12 @@
 #define FRAME_DATA_TYPE_STRING 0xf2
 #define FRAME_DATA_TYPE_STUDENT 0xf3
 #define FRAME_DATA_TYPE_TIME 0xf4
-
+#define FRAME_DATA_TYPE_STRING_W_TIME 0xf5
 #include "adhoc_customize/Rectangle.h"
 #include "adhoc_customize/RecvTime.h"
 #include "adhoc_customize/Student.h"
 //#include "adhoc_messages/Square.h"
+#include "adhoc_customize/StringWTime.h"
 
 #include "std_msgs/String.h"
 #include "std_msgs/Time.h"
@@ -24,10 +25,10 @@ void publishCustomMessage(std::string payload, std::string topic, uint8_t data_t
         publishMessage(rect, topic);
     }
 
-	if (data_type == FRAME_DATA_TYPE_STRING){        
-        std_msgs::String str;
-        desializeObject((unsigned char*) payload.data(), payload.length(), &str);
-        publishMessage(str, topic);
+	if (data_type == FRAME_DATA_TYPE_STRING_W_TIME){        
+        adhoc_customize::StringWTime strWTime;
+        desializeObject((unsigned char*) payload.data(), payload.length(), &strWTime);
+        publishMessage(strWTime, topic);
         ROS_INFO("HERE");
     }
 
