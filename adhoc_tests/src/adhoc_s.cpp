@@ -50,8 +50,9 @@ void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	ros::Time afterPing = ros::Time::now();
 	ros::Time beforePing = recvTime->time;
 	ros::Duration ping = afterPing - beforePing;
-	ROS_INFO("Ping duration: [%f] sec", ping.toSec());
-	
+	float pingTimeSec = pingTime.toSec();
+	ROS_INFO("Ping duration: [%f] sec", pingTimeSec);
+	outFile << pingTimeSec <<";";
 }
 
 int main (int argc, char **argv){
