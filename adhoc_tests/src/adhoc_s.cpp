@@ -169,13 +169,13 @@ int main (int argc, char **argv){
 			// send String with my own Serialization method
 			std_msgs::String str;
 			str.data = longstring;
-			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_car, "t_String");
+			adhoc_communication::sendMessage(str, FRAME_DATA_TYPE_STRING, dst_car, "t_stringSerialized");
 		}else if(mode==STRING_SERVICE){
 			// send String with native sendString Service 
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
 	    	// fill Service-Fields
-		    srv.request.topic = "t_string";
+		    srv.request.topic = "t_stringService";
 		    srv.request.data = longstring;
 		    srv.request.dst_robot = dst_car;
 		    		    
