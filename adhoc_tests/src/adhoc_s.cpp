@@ -21,7 +21,7 @@ enum Mode{
 };
 
 ros::Time beforePing;
-bool ping;
+bool ping, received;
 std::ofstream outFile;
 adhoc_customize::Rectangle rectangle;
 std::string longstring;
@@ -46,34 +46,34 @@ void convertToPrefixString(int input, std::string &output){
 	output = len_s + prefix;
 }
 
-void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
+void pingCallbackS(const adhoc_customize::RecvTime::ConstPtr& recvTime){
+	ROS_INFO("Received Ping Back");
 	ros::Time afterPing = ros::Time::now();
 	ros::Time beforePing = recvTime->time;
-	ros::Duration ping = afterPing - beforePing;
+	ros::Duration pingTime = afterPing - beforePing;
 	float pingTimeSec = pingTime.toSec();
 	ROS_INFO("Ping duration: [%f] sec", pingTimeSec);
 	outFile << pingTimeSec <<";";
+	received=true;
 }
 
 int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
-	ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
-
+	ros::Subscriber sub_ping = nh.subscribe("t_pingr", 1000, pingCallbackS);  
+	ros::AsyncSpinner  spinner(1);
+	spinner.start();
 	// get Parameters and print INFO
-	int rate, loop, mode_i,strLen, sleep;
-	std::string dst_car, filename;
+	int rate, loop, mode_i, strLen, sleep;
+	std::string dst_car;
 	nh.getParam("/sender/sleep", sleep);
 	nh.getParam("/sender/dst_car", dst_car);
 	nh.getParam("/sender/rate", rate);
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
-	nh.getParam("/sender/filename", filename);
 	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep);
-	//std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/" + filename + ".csv");
-	
 	
 	Mode mode = static_cast<Mode>(mode_i);
 	ros::Rate loop_rate(rate);
@@ -88,8 +88,8 @@ int main (int argc, char **argv){
 		convertToPrefixString(longstring.length(), size);	
 		std::cout << "Stringlength: "<< size << "Bytes\n";
 	}
-	// if ping, save Output to file
 
+	// if ping, save Output to file
 	std::ostringstream confStringStream;
 	confStringStream	//<< "loop: " << loop
 						<< "m" << mode_i
@@ -128,7 +128,7 @@ int main (int argc, char **argv){
 			adhoc_communication::sendMessage(timeMsg, FRAME_DATA_TYPE_TIME, dst_car, "t_ping");
 		}
 
-		if(mode==PING){
+		if(mode==PING){/*
 			// setup ROS-stuff
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
 	    	adhoc_communication::SendString srv;
@@ -163,7 +163,7 @@ int main (int argc, char **argv){
 
 			std::cout << pingTimeSec << "\n";
 			*/
-			std::cout << pingTimeD << "\n";
+			//std::cout << pingTimeD << "\n";
 
 		}else if(mode==STRING_SERIALIZE){
 			// send String with my own Serialization method
@@ -205,6 +205,6 @@ int main (int argc, char **argv){
 
 	outFile << "\n";
 	outFile.close();
-
+	//while(!received){}
 	return 1;
 }

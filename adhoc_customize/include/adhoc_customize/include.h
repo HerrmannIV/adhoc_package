@@ -44,7 +44,8 @@ void publishCustomMessage(std::string payload, std::string topic, uint8_t data_t
         recvTime.time = std_time.data;
         recvTime.src_car=src_host;
         publishMessage(recvTime, topic);
-        ROS_INFO("HERE3");
+
+        ROS_INFO("HERE3: %s", topic.c_str());
     }
 }
 #endif

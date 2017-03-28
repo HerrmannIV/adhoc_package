@@ -22,7 +22,7 @@ void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	ROS_INFO("I heard a Ping");	
 	std_msgs::Time time; 
 	time.data = recvTime->time;	  
-	adhoc_communication::sendMessage(time, FRAME_DATA_TYPE_TIME, recvTime->src_car, "t_ping");
+	adhoc_communication::sendMessage(time, FRAME_DATA_TYPE_TIME, recvTime->src_car, "t_pingr");
 }
 int main(int argc, char **argv){
 	ros::init(argc, argv, "adhoc_receiver_node");  
