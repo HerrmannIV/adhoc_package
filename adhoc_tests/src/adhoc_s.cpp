@@ -26,7 +26,7 @@ std::ofstream outFile;
 adhoc_customize::Rectangle rectangle;
 std::string longstring;
 double pingTimeD;
-int recvCounter = 0;
+int recvCounter = 0, linecounter = 0;
 
 
 void convertToPrefixString(int input, std::string &output){
@@ -45,23 +45,34 @@ void convertToPrefixString(int input, std::string &output){
 	len_s.erase(len_s.end()-crop, len_s.end());
 	output = len_s + prefix;
 }
-
+/*
 void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	if(recvCounter){
 		ros::Time afterPing = ros::Time::now();
 		float pingTimeSec = (afterPing - recvTime->time).toSec();
 		ROS_INFO("Ping duration: [%f] sec", pingTimeSec);
 		outFile << pingTimeSec <<";";
+		linecounter++;
+	}
+	if(linecounter == 25){
+		linecounter=0;
+		outFile << "\n";
 	}
 	recvCounter++;
-
 }
-void sendCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
+*/
+
+void answerCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	if(recvCounter){
 		ros::Time afterSend = ros::Time::now();
 		float sendTimeSec = (afterSend - recvTime->time).toSec();
-		ROS_INFO("RecvStrAns, Send duration: [%f] sec", sendTimeSec);
+		ROS_INFO("RecvAnswer, Duration: [%f] sec", sendTimeSec);
 		outFile << sendTimeSec <<";";
+		linecounter++;
+	}
+	if(linecounter == 25){
+		linecounter=0;
+		outFile << "\n";
 	}
 	recvCounter++;
 }
@@ -70,8 +81,8 @@ int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
-	ros::Subscriber sub_ping = nh.subscribe("t_pingr", 1000, pingCallback);  
-	ros::Subscriber sub_string = nh.subscribe("t_str", 1000, sendCallback);  
+	ros::Subscriber sub_ping = nh.subscribe("t_answer", 1000, answerCallback);  
+	//ros::Subscriber sub_string = nh.subscribe("t_str", 1000, sendCallback);  
 	ros::AsyncSpinner  spinner(1);
 	spinner.start();
 	// get Parameters and print INFO
