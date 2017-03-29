@@ -182,8 +182,10 @@ int main (int argc, char **argv){
 	ros::Duration dur = end-begin;
 	ROS_INFO("duration: %f sec", dur.toSec());
 	*/
-	while(recvCounter!=loop)
+	while(recvCounter<=loop){
+		ROS_INFO("COUNTER: [%d]", recvCounter);
 		loop_rate.sleep();
+	}
 	outFile << "\n";
 	outFile.close();
 	return 1;
