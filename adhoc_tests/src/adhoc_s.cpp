@@ -25,12 +25,12 @@ bool ping, received;
 std::ofstream outFile;
 adhoc_customize::Rectangle rectangle;
 std::string longstring;
-struct timeval tBefore, tAfter;
 double pingTimeD;
+int recvCounter = 0;
 
 
 void convertToPrefixString(int input, std::string &output){
-	// convert input to string
+	// convert int input to string
 	std::ostringstream Stream;
     Stream << input;
 	std::string len_s = Stream.str();
@@ -47,22 +47,23 @@ void convertToPrefixString(int input, std::string &output){
 }
 
 void pingCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
-	ROS_INFO("Received Ping Back");
-	ros::Time afterPing = ros::Time::now();
-	ros::Time beforePing = recvTime->time;
-	ros::Duration pingTime = afterPing - beforePing;
-	float pingTimeSec = pingTime.toSec();
-	ROS_INFO("Ping duration: [%f] sec", pingTimeSec);
-	outFile << pingTimeSec <<";";
+	if(recvCounter){
+		ros::Time afterPing = ros::Time::now();
+		float pingTimeSec = (afterPing - recvTime->time).toSec();
+		ROS_INFO("Ping duration: [%f] sec", pingTimeSec);
+		outFile << pingTimeSec <<";";
+	}
+	recvCounter++;
+
 }
 void sendCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
-	ROS_INFO("Received String Answer");
-	ros::Time afterSend = ros::Time::now();
-	ros::Time beforeSend = recvTime->time;
-	ros::Duration sendTime = afterSend - beforeSend;
-	float sendTimeSec = sendTime.toSec();
-	ROS_INFO("Send duration: [%f] sec", sendTimeSec);
-	outFile << sendTimeSec <<";";
+	if(recvCounter){
+		ros::Time afterSend = ros::Time::now();
+		float sendTimeSec = (afterSend - recvTime->time).toSec();
+		ROS_INFO("RecvStrAns, Send duration: [%f] sec", sendTimeSec);
+		outFile << sendTimeSec <<";";
+	}
+	recvCounter++;
 }
 
 int main (int argc, char **argv){
@@ -78,7 +79,10 @@ int main (int argc, char **argv){
 	std::string dst_car;
 	nh.getParam("/sender/sleep", sleep);
 	nh.getParam("/sender/dst_car", dst_car);
-	nh.getParam("/sender/rate", rate);
+	if (sleep)
+		nh.getParam("/sender/rate", rate);
+	else 
+		rate = 2;
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
@@ -98,23 +102,23 @@ int main (int argc, char **argv){
 		std::cout << "Stringlength: "<< size << "Bytes\n";
 	}
 
-	// if ping, save Output to file
+	// Generate Filename from Config
 	std::ostringstream confStringStream;
-	confStringStream	//<< "loop: " << loop
-						<< "m" << mode_i
-						<< "r" << rate
-						//<< "; length/10: " << strLen
-						//<< "; Dest: " << dst_car
-						<< "s" << sleep;
-
-	std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
+	confStringStream	<< "m" << mode_i;
+	confStringStream	<< "s" << sleep;
+	if (sleep) 
+		confStringStream 	<< "r" << rate;
+	if (mode == STRING_SERIALIZE || mode == STRING_SERVICE) 
+		confStringStream << "le" << strLen;
+	
+	/*
 	std::ifstream inFile(fname.c_str());
 	std::string inputLine;
 	if (inFile.is_open()){
 		getline(inFile, inputLine);
 		inFile.close();
-		std::cout << "|" << inputLine << "|\n";
-		std::cout << "|" << confStringStream.str() << "|\n";
+		//std::cout << "|" << inputLine << "|\n";
+		//std::cout << "|" << confStringStream.str() << "|\n";
 		if (confStringStream.str().compare(inputLine) == 0)
 			ROS_INFO("OutputFile same Config");
 		else{ 
@@ -126,9 +130,13 @@ int main (int argc, char **argv){
 		outFile << confStringStream.str() << "\n";
 		outFile.close();		
 	}
+	*/
+	ROS_INFO("%s",confStringStream.str().c_str());
+	std::string fname = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
 	outFile.open (fname.c_str(), std::ios_base::app);
 	int i = 0;
-	ros::Time begin = ros::Time::now();
+
+	//ros::Time begin = ros::Time::now();
 	while(ros::ok() && i<loop){
 		i++;
 		if(mode==PING_ALT){
@@ -140,7 +148,7 @@ int main (int argc, char **argv){
 			adhoc_customize::StringWTime strWTime;
 			strWTime.data = longstring;
 			strWTime.time = ros::Time::now();
-			adhoc_communication::sendMessage(strWTime, FRAME_DATA_TYPE_STRING, dst_car, "t_stringSerializedWTime");
+			adhoc_communication::sendMessage(strWTime, FRAME_DATA_TYPE_STRING_W_TIME, dst_car, "t_stringSerializedWTime");
 		}else if(mode==STRING_SERVICE){
 			// send String with native sendString Service 
 			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
@@ -169,11 +177,13 @@ int main (int argc, char **argv){
 		}
 		if (sleep) loop_rate.sleep();
 	}	
-
+	/*
 	ros::Time end = ros::Time::now();
 	ros::Duration dur = end-begin;
 	ROS_INFO("duration: %f sec", dur.toSec());
-
+	*/
+	while(recvCounter!=loop)
+		loop_rate.sleep();
 	outFile << "\n";
 	outFile.close();
 	return 1;

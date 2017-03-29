@@ -20,34 +20,34 @@
 #ifdef COMM
 void publishCustomMessage(std::string payload, std::string topic, uint8_t data_type, std::string src_host){
 	if (data_type == FRAME_DATA_TYPE_RECTANGLE){        
+        ROS_INFO("FRAME_DATA_TYPE_RECTANGLE");
         adhoc_customize::Rectangle rect;
         desializeObject((unsigned char*) payload.data(), payload.length(), &rect);
         publishMessage(rect, topic);
-    }
-
-	if (data_type == FRAME_DATA_TYPE_STRING_W_TIME){        
+    }else 
+    if (data_type == FRAME_DATA_TYPE_STRING_W_TIME){
+        ROS_INFO("FRAME_DATA_TYPE_STRING_W_TIME");
         adhoc_customize::StringWTime strWTime;
         desializeObject((unsigned char*) payload.data(), payload.length(), &strWTime);
         publishMessage(strWTime, topic);
-        ROS_INFO("HERE");
-    }
-
+    }else
     if (data_type == FRAME_DATA_TYPE_STUDENT){        
+        ROS_INFO("FRAME_DATA_TYPE_STUDENT");
         adhoc_customize::Student stud;
         desializeObject((unsigned char*) payload.data(), payload.length(), &stud);
         publishMessage(stud, topic);
-        ROS_INFO("HERE2");
-    }
+    }else
     if (data_type == FRAME_DATA_TYPE_TIME){        
+        ROS_INFO("FRAME_DATA_TYPE_TIME");
         std_msgs::Time std_time;
         desializeObject((unsigned char*) payload.data(), payload.length(), &std_time);
         adhoc_customize::RecvTime recvTime;
         recvTime.time = std_time.data;
         recvTime.src_car=src_host;
         publishMessage(recvTime, topic);
-
-        ROS_INFO("HERE3: %s", topic.c_str());
-    }
+    }else
+    
+    ROS_ERROR("UNKNOWN FRAME_DATA_TYPE");
 }
 #endif
 
