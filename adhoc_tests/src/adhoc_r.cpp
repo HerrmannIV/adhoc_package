@@ -11,6 +11,8 @@ void rectangleCallback(const adhoc_customize::Rectangle::ConstPtr& msg){
 	ROS_INFO("I heard: [%d][%d]", msg->length, msg->width);
 }
 
+
+
 void stringSerializedCallback(const adhoc_customize::StringWTime::ConstPtr& msg){
 	std::cout << "I heard string of length: "<< msg->data.length() << " Bytes\n";
 	std_msgs::Time time; 
@@ -18,16 +20,23 @@ void stringSerializedCallback(const adhoc_customize::StringWTime::ConstPtr& msg)
 	adhoc_communication::sendMessage(time, FRAME_DATA_TYPE_TIME, msg->src_car, "t_answer");
 }
 
-void stringServiceCallback(const adhoc_communication::RecvString::ConstPtr& msg){
-	std::cout << "I heard string of length: "<< msg->data.length() << " Bytes\n";
-	//ROS_INFO("I heard string: [%s]", msg->data.c_str());
-}
+
 void pingCallback(const adhoc_customize::RecvTime::ConstPtr& msg){
 	ROS_INFO("I heard a Ping");	
 	std_msgs::Time time; 
 	time.data = msg->time;	  
 	adhoc_communication::sendMessage(time, FRAME_DATA_TYPE_TIME, msg->src_car, "t_answer");
 }
+
+
+
+
+
+void stringServiceCallback(const adhoc_communication::RecvString::ConstPtr& msg){
+	std::cout << "I heard string of length: "<< msg->data.length() << " Bytes\n";
+	//ROS_INFO("I heard string: [%s]", msg->data.c_str());
+}
+
 int main(int argc, char **argv){
 	ros::init(argc, argv, "adhoc_receiver_node");  
 	ros::NodeHandle nh;

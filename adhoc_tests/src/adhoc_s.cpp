@@ -81,10 +81,11 @@ int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh;
-	ros::Subscriber sub_ping = nh.subscribe("t_answer", 1000, answerCallback);  
+	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback);  
 	//ros::Subscriber sub_string = nh.subscribe("t_str", 1000, sendCallback);  
 	ros::AsyncSpinner  spinner(1);
 	spinner.start();
+	
 	// get Parameters and print INFO
 	int rate, loop, mode_i, strLen, sleep;
 	std::string dst_car;
