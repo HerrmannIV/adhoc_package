@@ -53,7 +53,7 @@ int main (int argc, char **argv){
 
 	// get Parameters and print INFO
 	int rate, loop, mode_i, strLen, sleep;
-	std::string dst_car;
+	std::string dst_car, pos;
 	nh.getParam("/sender/sleep", sleep);
 	nh.getParam("/sender/dst_car", dst_car);
 	if (sleep)
@@ -63,7 +63,8 @@ int main (int argc, char **argv){
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
-	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep);
+	nh.getParam("/sender/pos", pos);
+	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d], pos: [%s]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep, pos.c_str());
 	
 	Mode mode = static_cast<Mode>(mode_i);
 	ros::Rate loop_rate(rate);
@@ -81,6 +82,7 @@ int main (int argc, char **argv){
 
 	// Generate Filename from Config
 	std::ostringstream confStringStream;
+	confStringStream	<< "p" << pos;
 	confStringStream	<< "m" << mode_i;
 	confStringStream	<< "s" << sleep;
 	if (sleep) 
