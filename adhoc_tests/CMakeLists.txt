@@ -53,11 +53,10 @@ find_package(catkin REQUIRED COMPONENTS
  #)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+ add_service_files(
+   FILES
+	FilenameService.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -67,10 +66,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
- #generate_messages(
- #  DEPENDENCIES
- #  std_msgs
- #)
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -102,9 +101,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+ # INCLUDE_DIRS include
 #  LIBRARIES adhoc
-#  CATKIN_DEPENDS message_runtime 
+ CATKIN_DEPENDS message_runtime 
 #  DEPENDS system_lib
 )
 
@@ -136,6 +135,7 @@ include_directories( include
  add_executable(sender src/adhoc_s.cpp)
  add_executable(mirror src/adhoc_m.cpp)
  add_executable(receiver src/adhoc_r.cpp)
+ add_executable(dummy src/dummy.cpp)
 #add_dependencies(adhoc_rn adhoc_generate_messages_cpp)
 #add_dependencies(adhoc_sn adhoc_generate_messages_cpp)
 ## Add cmake target dependencies of the executable
@@ -146,6 +146,7 @@ include_directories( include
 target_link_libraries(sender   ${catkin_LIBRARIES} )
 target_link_libraries(receiver   ${catkin_LIBRARIES} )
 target_link_libraries(mirror   ${catkin_LIBRARIES} )
+target_link_libraries(dummy   ${catkin_LIBRARIES} )
 #############
 ## Install ##
 #############
@@ -168,11 +169,11 @@ target_link_libraries(mirror   ${catkin_LIBRARIES} )
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+ install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
+   PATTERN ".svn" EXCLUDE
+ )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
