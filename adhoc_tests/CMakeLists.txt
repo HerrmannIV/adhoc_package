@@ -133,8 +133,9 @@ include_directories( include
 
 ## Declare a C++ executable
 # add_executable(adhoc_node src/adhoc_node.cpp)
- add_executable(adhocs src/adhoc_s.cpp)
- add_executable(adhocr src/adhoc_r.cpp)
+ add_executable(sender src/adhoc_s.cpp)
+ add_executable(mirror src/adhoc_m.cpp)
+ add_executable(receiver src/adhoc_r.cpp)
 #add_dependencies(adhoc_rn adhoc_generate_messages_cpp)
 #add_dependencies(adhoc_sn adhoc_generate_messages_cpp)
 ## Add cmake target dependencies of the executable
@@ -142,8 +143,9 @@ include_directories( include
 # add_dependencies(adhoc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(adhocs   ${catkin_LIBRARIES} )
-target_link_libraries(adhocr   ${catkin_LIBRARIES} )
+target_link_libraries(sender   ${catkin_LIBRARIES} )
+target_link_libraries(receiver   ${catkin_LIBRARIES} )
+target_link_libraries(mirror   ${catkin_LIBRARIES} )
 #############
 ## Install ##
 #############
