@@ -69,7 +69,7 @@ int main (int argc, char **argv){
 	ros::Rate loop_rate(rate);
 	ping = (mode == PING);
 
-	// dummy is 10Bytes, make longstring
+	// dummy is 10Bytes, make longstring=strLen*10
 	if (mode == STRING_SERIALIZE || mode == STRING_SERVICE){
 		std::string dummy = "ABCDEFGHIJ";
 		for(int k = 0; k<strLen; k++)
