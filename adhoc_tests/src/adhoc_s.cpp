@@ -82,7 +82,8 @@ int main (int argc, char **argv){
 
 	// Generate Filename from Config
 	std::ostringstream confStringStream;
-	confStringStream	<< "p" << pos;
+	if (pos != "")
+		confStringStream	<< "p" << pos;
 	confStringStream	<< "m" << mode_i;
 	confStringStream	<< "s" << sleep;
 	if (sleep) 
@@ -126,7 +127,6 @@ int main (int argc, char **argv){
 	while(ros::ok() && i<loop){
 		if (!i) ROS_INFO("First sending");
 		i++;
-
 		if(mode==PING_ALT){
 			std_msgs::Time timeMsg;
 			timeMsg.data = ros::Time::now();
