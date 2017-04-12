@@ -4,7 +4,7 @@
 #include "adhoc_communication/functions.h"
 #include "adhoc_communication/SendString.h"
 #include "adhoc_communication/RecvString.h"
-
+#include <adhoc_tests/FilenameService.h>
 #include <iostream> 
 #include <fstream>
 #include <string> 
@@ -33,14 +33,13 @@ void convertToPrefixString(int input, std::string &output){
 	std::ostringstream Stream;
     Stream << input;
 	std::string len_s = Stream.str();
-
-	std::string prefix = ""; int crop=0;
-
+	
 	// set prefix and crop amount
+	std::string prefix = ""; int crop=0;
 	if (input >=1000) { prefix = "k"; crop=3;}
 	if (input >=1000000) { prefix = "M"; crop=6;}
 
-	// crop
+	// crop and add prefix
 	len_s.erase(len_s.end()-crop, len_s.end());
 	output = len_s + prefix;
 }
@@ -50,13 +49,11 @@ int main (int argc, char **argv){
 	
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh; 
-	ros::Publisher confPub = nh.advertise<std_msgs::String>("t_filename", 1000);
-	ros::AsyncSpinner spinner(1);
-	//spinner.start();
+
 
 	// get Parameters and print INFO
 	int rate, loop, mode_i, strLen, sleep;
-	std::string dst_car;
+	std::string dst_car, pos;
 	nh.getParam("/sender/sleep", sleep);
 	nh.getParam("/sender/dst_car", dst_car);
 	if (sleep)
@@ -66,13 +63,14 @@ int main (int argc, char **argv){
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
-	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep);
+	nh.getParam("/sender/pos", pos);
+	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d], pos: [%s]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep, pos.c_str());
 	
 	Mode mode = static_cast<Mode>(mode_i);
 	ros::Rate loop_rate(rate);
 	ping = (mode == PING);
 
-	// dummy is 10Bytes, make longstring
+	// dummy is 10Bytes, make longstring=strLen*10
 	if (mode == STRING_SERIALIZE || mode == STRING_SERVICE){
 		std::string dummy = "ABCDEFGHIJ";
 		for(int k = 0; k<strLen; k++)
@@ -84,6 +82,7 @@ int main (int argc, char **argv){
 
 	// Generate Filename from Config
 	std::ostringstream confStringStream;
+	confStringStream	<< "p" << pos;
 	confStringStream	<< "m" << mode_i;
 	confStringStream	<< "s" << sleep;
 	if (sleep) 
@@ -91,14 +90,41 @@ int main (int argc, char **argv){
 	if (mode == STRING_SERIALIZE || mode == STRING_SERVICE) 
 		confStringStream << "le" << strLen;
 
-	std_msgs::String filepath;
-	filepath.data = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
-	ROS_INFO("[%s]", filepath.data.c_str());
-	confPub.publish(filepath);
-	spinner.start();
+	
+	std::string filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
+	ROS_INFO("Filepath [%s]", filepath.c_str());
+	
+	/*
+	ros::Rate pubRate(1);
+	ros::Publisher confPub = nh.advertise<std_msgs::String>("t_filename", 1000, false);
+	for(int k=0; k<10; k++){
+		confPub.publish(filepath);
+		ros::spinOnce();
+		pubRate.sleep();
+	}
+	*/
+
+	/*
+	while (confPub.getNumSubscribers()==0){
+		ROS_INFO("bla");
+		std::cout << "."; // << confPub.getNumSubscribers();
+	}
+	*/
+
+	ros::ServiceClient client = nh.serviceClient<adhoc_tests::FilenameService>("setFilename");
+	adhoc_tests::FilenameService fnameService;
+	fnameService.request.filename = filepath;
+	if (client.call(fnameService))
+		ROS_INFO("Published Filepath");
+	else
+		ROS_ERROR("Failed to call FilenameService");
+
+
+
 	int i = 0;
 
 	while(ros::ok() && i<loop){
+		if (!i) ROS_INFO("First sending");
 		i++;
 
 		if(mode==PING_ALT){
