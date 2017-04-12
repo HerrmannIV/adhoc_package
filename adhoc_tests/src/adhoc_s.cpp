@@ -100,6 +100,7 @@ int main (int argc, char **argv){
 
 	while(ros::ok() && i<loop){
 		i++;
+
 		if(mode==PING_ALT){
 			std_msgs::Time timeMsg;
 			timeMsg.data = ros::Time::now();

@@ -5,6 +5,7 @@
 #include "adhoc_communication/SendString.h"
 #include "adhoc_communication/functions.h"
 
+std::string command = "audacious -pq ~/Music/Beep-sound.ogx";
 
 
 void rectangleCallback(const adhoc_customize::Rectangle::ConstPtr& msg){
@@ -23,6 +24,9 @@ void stringSerializedCallback(const adhoc_customize::StringWTime::ConstPtr& msg)
 
 void pingCallback(const adhoc_customize::RecvTime::ConstPtr& msg){
 	ROS_INFO("I heard a Ping");	
+	// Beep 
+	system(command.data());
+
 	std_msgs::Time time; 
 	time.data = msg->time;	  
 	adhoc_communication::sendMessage(time, FRAME_DATA_TYPE_TIME, msg->src_car, "t_answer");
