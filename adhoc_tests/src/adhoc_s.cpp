@@ -82,7 +82,8 @@ int main (int argc, char **argv){
 
 	// Generate Filename from Config
 	std::ostringstream confStringStream;
-	confStringStream	<< "p" << pos;
+	if (pos != "")
+		confStringStream	<< "p" << pos;
 	confStringStream	<< "m" << mode_i;
 	confStringStream	<< "s" << sleep;
 	if (sleep) 
