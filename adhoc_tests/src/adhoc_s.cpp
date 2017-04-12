@@ -118,7 +118,15 @@ int main (int argc, char **argv){
 		ROS_INFO("Published Filepath");
 	else
 		ROS_ERROR("Failed to call FilenameService");
+/*
 
+	IPERF
+	PING6
+	pECKEs1r(<30) messen !!! 
+
+
+
+*/
 
 
 	int i = 0;
