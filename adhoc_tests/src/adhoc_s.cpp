@@ -5,6 +5,7 @@
 #include "adhoc_communication/SendString.h"
 #include "adhoc_communication/RecvString.h"
 #include <adhoc_tests/FilenameService.h>
+#include <adhoc_tests/sendPing.h>
 #include <iostream> 
 #include <fstream>
 #include <string> 
@@ -25,7 +26,21 @@ bool ping;
 std::ofstream outFile;
 adhoc_customize::Rectangle rectangle;
 std::string longstring;
-int recvCounter = 0, linecounter = 0;
+int recvCounter = 0, linecounter = 0, i = 0;
+int loop, mode_i, strLen;
+std::string dst_car, pos;
+
+
+
+bool sendPing(adhoc_tests::sendPing::Request &req, adhoc_tests::sendPing::Response &res){
+	if(i <= loop){
+		std_msgs::Time timeMsg;
+		timeMsg.data = ros::Time::now();
+		adhoc_communication::sendMessage(timeMsg, FRAME_DATA_TYPE_TIME, dst_car, "t_ping");
+		return true;
+	}
+	return false;
+}
 
 
 void convertToPrefixString(int input, std::string &output){
@@ -50,24 +65,17 @@ int main (int argc, char **argv){
 	ros::init(argc, argv, "adhoc_sender1");
 	ros::NodeHandle nh; 
 
+	ros::ServiceServer sendPingService = nh.advertiseService("sendPing", sendPing);
 
 	// get Parameters and print INFO
-	int rate, loop, mode_i, strLen, sleep;
-	std::string dst_car, pos;
-	nh.getParam("/sender/sleep", sleep);
 	nh.getParam("/sender/dst_car", dst_car);
-	if (sleep)
-		nh.getParam("/sender/rate", rate);
-	else 
-		rate = 2;
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
 	nh.getParam("/sender/pos", pos);
-	ROS_INFO("loop [%d]; mode [%d]: rate [%d]; length/10 [%d], Dest: [%s], sleep:[%d], pos: [%s]", loop, mode_i, rate, strLen, dst_car.c_str(), sleep, pos.c_str());
+	ROS_INFO("loop [%d], mode [%d], length/10 [%d], \n Dest: [%s], pos: [%s]", loop, mode_i, strLen, dst_car.c_str(), pos.c_str());
 	
 	Mode mode = static_cast<Mode>(mode_i);
-	ros::Rate loop_rate(rate);
 	ping = (mode == PING);
 
 	// dummy is 10Bytes, make longstring=strLen*10
@@ -80,98 +88,38 @@ int main (int argc, char **argv){
 		std::cout << "Stringlength: "<< size << "Bytes\n";
 	}
 
-	// Generate Filename from Config
+	// Generate Config-String
 	std::ostringstream confStringStream;
 	if (pos != "")
 		confStringStream	<< "p" << pos;
 	confStringStream	<< "m" << mode_i;
-	confStringStream	<< "s" << sleep;
-	if (sleep) 
-		confStringStream 	<< "r" << rate;
+	//confStringStream	<< "s" << sleep;
+	//if (sleep) 
+	//	confStringStream 	<< "r" << rate;
 	if (mode == STRING_SERIALIZE || mode == STRING_SERVICE) 
 		confStringStream << "le" << strLen;
 
-	
+	// make absolute filepath
 	std::string filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
 	ROS_INFO("Filepath [%s]", filepath.c_str());
-	
-	/*
-	ros::Rate pubRate(1);
-	ros::Publisher confPub = nh.advertise<std_msgs::String>("t_filename", 1000, false);
-	for(int k=0; k<10; k++){
-		confPub.publish(filepath);
-		ros::spinOnce();
-		pubRate.sleep();
-	}
-	*/
 
-	/*
-	while (confPub.getNumSubscribers()==0){
-		ROS_INFO("bla");
-		std::cout << "."; // << confPub.getNumSubscribers();
-	}
-	*/
-
+	// call set Filepath	
 	ros::ServiceClient client = nh.serviceClient<adhoc_tests::FilenameService>("setFilename");
 	adhoc_tests::FilenameService fnameService;
 	fnameService.request.filename = filepath;
+	ROS_INFO("before set filepath");
 	if (client.call(fnameService))
-		ROS_INFO("Published Filepath");
+		ROS_INFO("Filepath set with Service");
 	else
 		ROS_ERROR("Failed to call FilenameService");
+	ROS_INFO("after set filepath");
 /*
-
 	IPERF
 	PING6
 	pECKEs1r(<30) messen !!! 
-
-
-
 */
 
+	ros::spin();
 
-	int i = 0;
-
-	while(ros::ok() && i<loop){
-		if (!i) ROS_INFO("First sending");
-		i++;
-		if(mode==PING_ALT){
-			std_msgs::Time timeMsg;
-			timeMsg.data = ros::Time::now();
-			adhoc_communication::sendMessage(timeMsg, FRAME_DATA_TYPE_TIME, dst_car, "t_ping");
-		}else if(mode==STRING_SERIALIZE){
-			// send String with my own Serialization method
-			adhoc_customize::StringWTime strWTime;
-			strWTime.data = longstring;
-			strWTime.time = ros::Time::now();
-			adhoc_communication::sendMessage(strWTime, FRAME_DATA_TYPE_STRING_W_TIME, dst_car, "t_sswt");
-		}else if(mode==STRING_SERVICE){
-			// send String with native sendString Service 
-			ros::ServiceClient client = nh.serviceClient<adhoc_communication::SendString>("adhoc_communication/send_string");
-	    	adhoc_communication::SendString srv;
-	    	// fill Service-Fields
-		    srv.request.topic = "t_stringService";
-		    srv.request.data = longstring;
-		    srv.request.dst_robot = dst_car;
-		    		    
-		    // call Service
-		    if (!client.call(srv)) ROS_ERROR("Failed to call STRING-service");
-
-		}else if(mode==RECT){
-			// send Rectangle
-			rectangle.length = i;
-			rectangle.width = i;
-			adhoc_communication::sendMessage(rectangle, FRAME_DATA_TYPE_RECTANGLE, dst_car, "t_rectangle");
-
-		}else if(mode==STUD){
-			adhoc_customize::Student stud;
-			stud.name = "Rau";
-			stud.vorname = "Kai";			
-			stud.immatrikuliert = true;
-			stud.matnr = 123;
-			adhoc_communication::sendMessage(stud, FRAME_DATA_TYPE_STUDENT, dst_car, "t_stud");
-		}
-		if (sleep) loop_rate.sleep();
-	}	
 	return 1;
 }

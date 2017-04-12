@@ -56,6 +56,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
 	FilenameService.srv
+  sendPing.srv
  )
 
 ## Generate actions in the 'action' folder
