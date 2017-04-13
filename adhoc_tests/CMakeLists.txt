@@ -136,7 +136,7 @@ include_directories( include
  add_executable(sender src/adhoc_s.cpp)
  add_executable(mirror src/adhoc_m.cpp)
  add_executable(receiver src/adhoc_r.cpp)
- add_executable(dummy src/dummy.cpp)
+ add_executable(aio src/aio.cpp)
 #add_dependencies(adhoc_rn adhoc_generate_messages_cpp)
 #add_dependencies(adhoc_sn adhoc_generate_messages_cpp)
 ## Add cmake target dependencies of the executable
@@ -147,7 +147,7 @@ include_directories( include
 target_link_libraries(sender   ${catkin_LIBRARIES} )
 target_link_libraries(receiver   ${catkin_LIBRARIES} )
 target_link_libraries(mirror   ${catkin_LIBRARIES} )
-target_link_libraries(dummy   ${catkin_LIBRARIES} )
+target_link_libraries(aio   ${catkin_LIBRARIES} )
 #############
 ## Install ##
 #############

@@ -19,6 +19,7 @@ bool setFilename(adhoc_tests::FilenameService::Request &req, adhoc_tests::Filena
 int main (int argc, char **argv){	
 	ros::init(argc, argv, "adhoc_timeRecv");
 	ros::NodeHandle nh;
+	nhp = &nh;
 	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback); 
 	ros::Subscriber sub_filename = nh.subscribe("t_filename", 1000, filenameCallback); 
 	ros::ServiceServer fnameService = nh.advertiseService("setFilename", setFilename);
