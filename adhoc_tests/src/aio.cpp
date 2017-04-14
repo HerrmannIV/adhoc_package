@@ -33,7 +33,7 @@ ros::Time sentTime;
 ros::Duration span;
 ros::Duration oneSec(1,0);
 
-int loop, mode_i, strLen;
+int loop, mode_i, strLen, rate, sleeps;
 std::string dst_car, pos, longstring;
 
 std_msgs::Time timeMsg;
@@ -100,17 +100,19 @@ int main (int argc, char **argv){
 
 	// get Parameters and print INFO
 	nh.getParam("/sender/dst_car", dst_car);
+	nh.getParam("/sender/rate", rate);
+	nh.getParam("/sender/sleep", sleeps);
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
 	nh.getParam("/sender/pos", pos);
 	nh.getParam("/sender/thresh", thresh);
 	nh.getParam("/sender/timeout", timeoutTime);
-	ROS_INFO("loop [%d], mode [%d], length/10 [%d], \n Dest: [%s], pos: [%s]", loop, mode_i, strLen, dst_car.c_str(), pos.c_str());
+	ROS_INFO("loop [%d], mode [%d], length/10 [%d], \n Dest: [%s], pos: [%s], timeouttime: [%f]", loop, mode_i, strLen, dst_car.c_str(), pos.c_str(), timeoutTime);
 	
 	Mode mode = static_cast<Mode>(mode_i);
 	ping = (mode == PING);
-
+	ros::Rate loop_rate(rate);
 
 	// dummy is 10Bytes, make longstring=strLen*10
 	if (mode == DATA){
@@ -134,12 +136,15 @@ int main (int argc, char **argv){
 	state = SEND;
 
 	while(ros::ok()){
+//					ROS_INFO("while");
 
 		if(finish)
 			state = FINISH;
 
 		switch (state){
 		case SEND:
+//					ROS_INFO("sending");
+
 			sentTime = ros::Time::now();
 			switch (mode){
 				case PING:					
@@ -156,11 +161,12 @@ int main (int argc, char **argv){
 			break;
 
 		case WAIT_FOR_ANSWER:
-			
+//						ROS_INFO("wainting");
+
 			span = ros::Time::now() - sentTime;
 			
 			timeout = (span.toSec() > timeoutTime);
-			if (mode == DATA) timeout = false;
+			//if (mode == DATA) timeout = false;
 
 			if (timeout || received){
 
@@ -205,7 +211,7 @@ int main (int argc, char **argv){
 			//std::cout << j ;
 			if (found) overx = (double)(loop - j) / (double)loop;
 			ROS_INFO("avg [%f]; min [%f]; quart1 [%f]; med[%f];", avg, min, quart1, med);
-			ROS_INFO(" quart3[%f]; max [%f]; over: [%f]; timeout: [%d];", quart3, max, overx, timeoutCounter);
+			ROS_INFO(" quart3[%f]; max [%f]; over: [%f]; timeouts: [%d];", quart3, max, overx, timeoutCounter);
 
 			// output to file 			
 			outFile.open (filepath.c_str(), std::ios_base::app);
@@ -232,6 +238,10 @@ int main (int argc, char **argv){
 		default: 
 			ROS_INFO("ILLEGAL STATE");
 
+		}
+		if (sleeps){
+//			ROS_INFO("sleeping");
+		 loop_rate.sleep();
 		}
 		state = nextState;
 	}
