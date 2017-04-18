@@ -44,6 +44,8 @@ double sum = 0.0, avg, thresh;
 double quart1, med, quart3, quart90, min, max, overx = 0.0, timeoutRate;
 int j;
 std::ifstream file;
+Mode mode;
+ros::Rate loop_rate;
 
 void convertToPrefixString(int input, std::string &output){
 	// convert int input to string
@@ -75,29 +77,34 @@ void answerCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	}else{
 		receivedFirst=1;
 	}
-
-	//make lines 25 wide
-	if(linecounter == 25){
-		linecounter=0;
-		//outFile << "\n";
-	}
 	if (readingCounter == loop)
 		finish = true;
 	if(readingCounter){
 		//std::cout << "\r        " << readingCounter;
-		ROS_INFO("%d.%2d: Recv valid Answer: [%f] sec", readingCounter, linecounter, sendTimeSec);
+		ROS_INFO("%3d: Recv valid Answer: [%f] sec", readingCounter, sendTimeSec);
 	}
 	received=true;
  }
 
-int main (int argc, char **argv){
-
-	ros::init(argc, argv, "adhoc_aio");
-	ros::NodeHandle nh; 
-	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback); 
-	ros::AsyncSpinner spinner(4);
-	spinner.start();
-
+void makeLongstring(){
+	std::string dummy = "ABCDEFGHIJ";
+	for(int k = 0; k<strLen; k++)
+		longstring += dummy;
+	convertToPrefixString(longstring.length(), size);	
+	std::cout << "Stringlength: "<< size << "Bytes\n";
+	strWTime.data = longstring;
+	}
+void generateFilename(){
+	// Generate Config-String
+	std::ostringstream confStringStream;
+	confStringStream	<< "m" << mode_i;
+	//if (mode == DATA)
+	//	confStringStream << "le" << strLen;
+	// make absolute filepath and open file
+	std::string filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
+	ROS_INFO("Filepath [%s]", filepath.c_str());
+}
+void getParams(){
 	// get Parameters and print INFO
 	nh.getParam("/sender/dst_car", dst_car);
 	nh.getParam("/sender/rate", rate);
@@ -110,41 +117,30 @@ int main (int argc, char **argv){
 	nh.getParam("/sender/timeout", timeoutTime);
 	ROS_INFO("loop [%d], mode [%d], length/10 [%d], \n Dest: [%s], pos: [%s], timeouttime: [%f]", loop, mode_i, strLen, dst_car.c_str(), pos.c_str(), timeoutTime);
 	
-	Mode mode = static_cast<Mode>(mode_i);
+	mode = static_cast<Mode>(mode_i);
 	ping = (mode == PING);
-	ros::Rate loop_rate(rate);
+	loop_rate = ros::Rate(rate);
+}
+void initNode(){
+	ros::init(argc, argv, "adhoc_aio");
+	ros::NodeHandle nh; 
+	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback); 
+	ros::AsyncSpinner spinner(4);
+	spinner.start();
+}
+int main (int argc, char **argv){
+	initNode();
+	getParams();
+	if (mode == DATA) makeLongstring();
+	generateFilename();
 
-	// dummy is 10Bytes, make longstring=strLen*10
-	if (mode == DATA){
-		std::string dummy = "ABCDEFGHIJ";
-		for(int k = 0; k<strLen; k++)
-			longstring += dummy;
-		convertToPrefixString(longstring.length(), size);	
-		std::cout << "Stringlength: "<< size << "Bytes\n";
-		strWTime.data = longstring;
-	}
-
-	// Generate Config-String
-	std::ostringstream confStringStream;
-	confStringStream	<< "m" << mode_i;
-	//if (mode == DATA)
-	//	confStringStream << "le" << strLen;
-
-	// make absolute filepath and open file
-	std::string filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
-	ROS_INFO("Filepath [%s]", filepath.c_str());
 	state = SEND;
 
 	while(ros::ok()){
-//					ROS_INFO("while");
-
 		if(finish)
 			state = FINISH;
-
 		switch (state){
 		case SEND:
-//					ROS_INFO("sending");
-
 			sentTime = ros::Time::now();
 			switch (mode){
 				case PING:					
@@ -157,22 +153,13 @@ int main (int argc, char **argv){
 					break;
 			}
 			nextState = WAIT_FOR_ANSWER;
-
 			break;
 
 		case WAIT_FOR_ANSWER:
-//						ROS_INFO("wainting");
-
 			span = ros::Time::now() - sentTime;
-			
 			timeout = (span.toSec() > timeoutTime);
-			//if (mode == DATA) timeout = false;
 
 			if (timeout || received){
-
-			//if ((span.toSec() > 1.0) || received){
-
-				
 				if (timeout) {
 					timeoutCounter++;
 					ROS_ERROR("TIMEOUT");
@@ -185,6 +172,7 @@ int main (int argc, char **argv){
 				nextState = state;
 			}
 			break;
+
 		case FINISH:
 			ROS_INFO("Finish");
 
