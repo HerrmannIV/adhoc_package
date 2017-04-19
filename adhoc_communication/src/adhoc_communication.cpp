@@ -2367,7 +2367,7 @@ void processRouteRequest(RouteRequest req)
                     sleepMS(10);
 
                 string network_string = rr.getResponseAsNetworkString(src_mac);
-
+                ROS_INFO("response: [%s]", network_string.c_str());
                 socketSend(network_string);
 #ifdef PERFORMANCE_LOGGING_UC_LINK_SUMMARY
                 Logging::increaseProperty("num_rreq_received");

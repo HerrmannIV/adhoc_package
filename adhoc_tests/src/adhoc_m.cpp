@@ -25,7 +25,7 @@ void stringSerializedCallback(const adhoc_customize::StringWTime::ConstPtr& msg)
 void pingCallback(const adhoc_customize::RecvTime::ConstPtr& msg){
 	ROS_INFO("I heard a Ping");	
 	// Beep 
-	system(command.data());
+	//system(command.data());
 
 	std_msgs::Time time; 
 	time.data = msg->time;	  
