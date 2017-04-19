@@ -840,7 +840,7 @@ bool sendPacket(std::string &hostname_destination, std::string& payload, uint8_t
 
     uint32_t packet_size = payload_len + (frames_count * header_len);
 
-    ROS_DEBUG("PACKET INFO: PL[%u] PL SPACE[%u] HEADER LEN[%u] SIZE[%u]", payload_len, payload_space, header_len, frames_count);
+    ROS_INFO("PACKET INFO: PL[%u] PL SPACE[%u] HEADER LEN[%u] SIZE[%u]", payload_len, payload_space, header_len, frames_count);
     /*Check if packet is not too large and the frame have also space for payload data*/
     if (packet_size >= (unsigned) max_packet_size)
     {

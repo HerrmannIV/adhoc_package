@@ -5,7 +5,7 @@ while true; do
 		then
 		if [[ $re == *"FE:ED:DE:AD:BE:EF"* ]]
 			then
-				echo "alles jut";
+				echo "ok";
 			else
 				echo "set again";
 				sudo ifconfig wlan0 down;

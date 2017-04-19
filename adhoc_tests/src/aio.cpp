@@ -33,7 +33,7 @@ ros::Time sentTime;
 ros::Duration span;
 ros::Duration oneSec(1,0);
 
-int loop, mode_i, strLen;
+int loop, mode_i, strLen, rate, sleeps;
 std::string dst_car, pos, longstring;
 
 std_msgs::Time timeMsg;
@@ -44,6 +44,8 @@ double sum = 0.0, avg, thresh;
 double quart1, med, quart3, quart90, min, max, overx = 0.0, timeoutRate;
 int j;
 std::ifstream file;
+Mode mode;
+std::string filepath;
 
 void convertToPrefixString(int input, std::string &output){
 	// convert int input to string
@@ -75,23 +77,38 @@ void answerCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	}else{
 		receivedFirst=1;
 	}
-
-	//make lines 25 wide
-	if(linecounter == 25){
-		linecounter=0;
-		//outFile << "\n";
-	}
 	if (readingCounter == loop)
 		finish = true;
 	if(readingCounter){
 		//std::cout << "\r        " << readingCounter;
-		ROS_INFO("%d.%2d: Recv valid Answer: [%f] sec", readingCounter, linecounter, sendTimeSec);
+		ROS_INFO("%3d: Recv valid Answer: [%f] sec", readingCounter, sendTimeSec);
 	}
 	received=true;
  }
 
-int main (int argc, char **argv){
+void makeLongstring(){
+	std::string dummy = "ABCDEFGHIJ";
+	for(int k = 0; k<strLen; k++)
+		longstring += dummy;
+	convertToPrefixString(longstring.length(), size);	
+	std::cout << "Stringlength: "<< size << "Bytes\n";
+	strWTime.data = longstring;
+	}
+void generateFilename(){
+	// Generate Config-String
+	std::ostringstream confStringStream;
+	confStringStream	<< "m" << mode_i;
+	//if (mode == DATA)
+	//	confStringStream << "le" << strLen;
+	// make absolute filepath and open file
+	filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
+	ROS_INFO("Filepath [%s]", filepath.c_str());
+}
 
+void initNode(){
+
+}
+int main (int argc, char **argv){
 	ros::init(argc, argv, "adhoc_aio");
 	ros::NodeHandle nh; 
 	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback); 
@@ -100,44 +117,27 @@ int main (int argc, char **argv){
 
 	// get Parameters and print INFO
 	nh.getParam("/sender/dst_car", dst_car);
+	nh.getParam("/sender/rate", rate);
+	nh.getParam("/sender/sleep", sleeps);
 	nh.getParam("/sender/mode", mode_i);
 	nh.getParam("/sender/loop", loop);
 	nh.getParam("/sender/strLen", strLen);
 	nh.getParam("/sender/pos", pos);
 	nh.getParam("/sender/thresh", thresh);
 	nh.getParam("/sender/timeout", timeoutTime);
-	ROS_INFO("loop [%d], mode [%d], length/10 [%d], \n Dest: [%s], pos: [%s]", loop, mode_i, strLen, dst_car.c_str(), pos.c_str());
+	ROS_INFO("loop [%d], mode [%d], length/10 [%d], \n Dest: [%s], pos: [%s], timeouttime: [%f]", loop, mode_i, strLen, dst_car.c_str(), pos.c_str(), timeoutTime);
 	
-	Mode mode = static_cast<Mode>(mode_i);
+	mode = static_cast<Mode>(mode_i);
 	ping = (mode == PING);
 
-
-	// dummy is 10Bytes, make longstring=strLen*10
-	if (mode == DATA){
-		std::string dummy = "ABCDEFGHIJ";
-		for(int k = 0; k<strLen; k++)
-			longstring += dummy;
-		convertToPrefixString(longstring.length(), size);	
-		std::cout << "Stringlength: "<< size << "Bytes\n";
-		strWTime.data = longstring;
-	}
-
-	// Generate Config-String
-	std::ostringstream confStringStream;
-	confStringStream	<< "m" << mode_i;
-	//if (mode == DATA)
-	//	confStringStream << "le" << strLen;
-
-	// make absolute filepath and open file
-	std::string filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
-	ROS_INFO("Filepath [%s]", filepath.c_str());
+	if (mode == DATA) makeLongstring();
+	generateFilename();
+	ros::Rate loop_rate(rate);
 	state = SEND;
 
 	while(ros::ok()){
-
 		if(finish)
 			state = FINISH;
-
 		switch (state){
 		case SEND:
 			sentTime = ros::Time::now();
@@ -152,21 +152,13 @@ int main (int argc, char **argv){
 					break;
 			}
 			nextState = WAIT_FOR_ANSWER;
-
 			break;
 
 		case WAIT_FOR_ANSWER:
-			
 			span = ros::Time::now() - sentTime;
-			
 			timeout = (span.toSec() > timeoutTime);
-			if (mode == DATA) timeout = false;
 
 			if (timeout || received){
-
-			//if ((span.toSec() > 1.0) || received){
-
-				
 				if (timeout) {
 					timeoutCounter++;
 					ROS_ERROR("TIMEOUT");
@@ -179,6 +171,7 @@ int main (int argc, char **argv){
 				nextState = state;
 			}
 			break;
+
 		case FINISH:
 			ROS_INFO("Finish");
 
@@ -205,7 +198,7 @@ int main (int argc, char **argv){
 			//std::cout << j ;
 			if (found) overx = (double)(loop - j) / (double)loop;
 			ROS_INFO("avg [%f]; min [%f]; quart1 [%f]; med[%f];", avg, min, quart1, med);
-			ROS_INFO(" quart3[%f]; max [%f]; over: [%f]; timeout: [%d];", quart3, max, overx, timeoutCounter);
+			ROS_INFO(" quart3[%f]; max [%f]; over: [%f]; timeouts: [%d];", quart3, max, overx, timeoutCounter);
 
 			// output to file 			
 			outFile.open (filepath.c_str(), std::ios_base::app);
@@ -232,6 +225,10 @@ int main (int argc, char **argv){
 		default: 
 			ROS_INFO("ILLEGAL STATE");
 
+		}
+		if (sleeps){
+//			ROS_INFO("sleeping");
+		 loop_rate.sleep();
 		}
 		state = nextState;
 	}
