@@ -45,7 +45,7 @@ double quart1, med, quart3, quart90, min, max, overx = 0.0, timeoutRate;
 int j;
 std::ifstream file;
 Mode mode;
-ros::Rate loop_rate;
+std::string filepath;
 
 void convertToPrefixString(int input, std::string &output){
 	// convert int input to string
@@ -101,10 +101,20 @@ void generateFilename(){
 	//if (mode == DATA)
 	//	confStringStream << "le" << strLen;
 	// make absolute filepath and open file
-	std::string filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
+	filepath = std::string("/home/pses/catkin_ws/src/adhoc_package/"+ confStringStream.str() +".csv");
 	ROS_INFO("Filepath [%s]", filepath.c_str());
 }
-void getParams(){
+
+void initNode(){
+
+}
+int main (int argc, char **argv){
+	ros::init(argc, argv, "adhoc_aio");
+	ros::NodeHandle nh; 
+	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback); 
+	ros::AsyncSpinner spinner(4);
+	spinner.start();
+
 	// get Parameters and print INFO
 	nh.getParam("/sender/dst_car", dst_car);
 	nh.getParam("/sender/rate", rate);
@@ -119,21 +129,10 @@ void getParams(){
 	
 	mode = static_cast<Mode>(mode_i);
 	ping = (mode == PING);
-	loop_rate = ros::Rate(rate);
-}
-void initNode(){
-	ros::init(argc, argv, "adhoc_aio");
-	ros::NodeHandle nh; 
-	ros::Subscriber sub_answer = nh.subscribe("t_answer", 1000, answerCallback); 
-	ros::AsyncSpinner spinner(4);
-	spinner.start();
-}
-int main (int argc, char **argv){
-	initNode();
-	getParams();
+
 	if (mode == DATA) makeLongstring();
 	generateFilename();
-
+	ros::Rate loop_rate(rate);
 	state = SEND;
 
 	while(ros::ok()){
