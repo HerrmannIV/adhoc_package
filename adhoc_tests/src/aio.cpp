@@ -21,17 +21,18 @@ enum State{
 
 enum Mode{
 	PING = 5,
-	DATA = 1
+	DATA = 1,
+	SERVICE = 2
 };
+
 std::string size;
 int timeoutCounter;
 std::ofstream outFile;
 int receivedFirst = 0, linecounter = 0, readingCounter=0;
 State state, nextState;
 bool received = false, finish = false, timeout = false, ping, found, empty, output;
-ros::Time sentTime;
+ros::Time sentTime, startTime, finishTime;
 ros::Duration span;
-ros::Duration oneSec(1,0);
 
 int loop, mode_i, strLen, rate, sleeps;
 std::string dst_car, pos, longstring;
@@ -75,8 +76,10 @@ void answerCallback(const adhoc_customize::RecvTime::ConstPtr& recvTime){
 	}else
 		receivedFirst=1;
 	
-	if (readingCounter == loop || loop == 1)
+	if (readingCounter == loop || loop == 1){
 		finish = true;
+		finishTime = ros::Time::now();
+	}
 	if(readingCounter)
 		ROS_INFO("%3d: Recv valid Answer: [%f] sec", readingCounter, sendTimeSec);
 
@@ -130,10 +133,12 @@ int main (int argc, char **argv){
 	ping = (mode == PING);
 
 	if (mode == DATA) makeLongstring();
+
+	
 	generateFilename();
 	ros::Rate loop_rate(rate);
 	state = SEND;
-
+	startTime = ros::Time::now();
 	while(ros::ok()){
 		if(finish)
 			state = FINISH;
@@ -150,6 +155,7 @@ int main (int argc, char **argv){
 					strWTime.time = sentTime;
 					adhoc_communication::sendMessage(strWTime, FRAME_DATA_TYPE_STRING_W_TIME, dst_car, "t_sswt");
 					break;
+
 			}
 			if (loop==1) return 1;
 			nextState = WAIT_FOR_ANSWER;
@@ -182,7 +188,7 @@ int main (int argc, char **argv){
 				for(int i=0; i<loop; i++){
 					sum += valArray[i];
 				}
-				
+				ros::Duration overallTime = finishTime - startTime;
 				// calc stats
 				avg = sum/loop;
 				min = valArray[0];
@@ -217,7 +223,10 @@ int main (int argc, char **argv){
 				outFile << thresh << ";";
 				outFile << overx << ";";
 				outFile << timeoutCounter << ";";
-				outFile << timeoutRate<< ";\n";
+				outFile << timeoutRate << ";";
+				outFile << sum << ";";
+				outFile << overallTime.toSec() << ";\n";
+
 
 				outFile.close();
 				ROS_INFO("Finished output");

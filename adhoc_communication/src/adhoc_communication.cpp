@@ -2346,7 +2346,8 @@ void processRouteRequest(RouteRequest req)
                 new_route.cr_entry = false;
                 memcpy(new_route.previous_hop, ethernet_header->eh_source, 6);
                 memcpy(new_route.next_hop, src_mac, 6);
-                ROS_INFO("ADD ROUTE: ID[%u] SOURCE[%s] DEST[%s] NEXT HOP[%s] PREVIUS HOP[%s] PATH:[%s]", new_route.id, new_route.hostname_source.c_str(), new_route.hostname_destination.c_str(), getMacAsStr(new_route.next_hop).c_str(), getMacAsStr(new_route.previous_hop).c_str(), getPathAsStr(rr.path_l_).c_str());
+                ROS_INFO("ADD ROUTE: ID[%u] SOURCE[%s] DEST[%s] NEXT HOP[%s] PREVIUS HOP[%s] PATH:[%s]", 
+                    new_route.id, new_route.hostname_source.c_str(), new_route.hostname_destination.c_str(), getMacAsStr(new_route.next_hop).c_str(), getMacAsStr(new_route.previous_hop).c_str(), getPathAsStr(rr.path_l_).c_str());
 
                 /* Logging */
                 {
