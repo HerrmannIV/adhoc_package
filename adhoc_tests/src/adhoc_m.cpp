@@ -9,6 +9,9 @@
 #define JOIN 1
 #define LEAVE 0
 
+std::string hostname; // hostname of the node
+std::string node_prefix = "adhoc_communication/";
+std::string robot_prefix = "";
 
 std::string command = "audacious -pq ~/Music/Beep-sound.ogx";
 
@@ -53,12 +56,21 @@ int main(int argc, char **argv){
 	ros::Subscriber sub_stringSerialized = nh.subscribe("t_sswt", 1000, stringSerializedCallback);  
 	ros::Subscriber sub_stringService = nh.subscribe("t_stringServiceWTime", 1000, stringServiceCallback);  
 	ros::Subscriber sub_ping = nh.subscribe("t_ping", 1000, pingCallback);  
-	ros::ServiceClient client = nh.serviceClient<adhoc_communication::ChangeMCMembership>("ChangeMCMembership");
-	adhoc_communication::ChangeMCMembership changeMC;
-	changeMC.request.action = JOIN;
-	changeMC.request.group_name = "mc_pses-car3";
-	if (client.call(changeMC)){
-    	ROS_INFO("Status: %d", changeMC.response.status);
+
+    if (hostname.compare("") == 0)
+    {
+        char hostname_c[1024];
+        hostname_c[1023] = '\0';
+        gethostname(hostname_c, 1023);
+        hostname = std::string(hostname_c);
+    }
+
+	ros::ServiceClient client = nh.serviceClient<adhoc_communication::ChangeMCMembership>(robot_prefix + node_prefix + "join_mc_group");
+	adhoc_communication::ChangeMCMembership srv;
+	srv.request.action = JOIN;
+	srv.request.group_name = "mc_pses-car3";
+	if (client.call(srv)){
+    	ROS_INFO("Status: %d", srv.response.status);
   	}else{
     	ROS_ERROR("Failed to call service ChangeMCMembership");
   	}
