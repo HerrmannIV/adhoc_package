@@ -56,9 +56,9 @@ int main(int argc, char **argv){
 	ros::ServiceClient client = nh.serviceClient<adhoc_communication::ChangeMCMembership>("ChangeMCMembership");
 	adhoc_communication::ChangeMCMembership changeMC;
 	changeMC.request.action = JOIN;
-	changeMC.request.group_name = mc_pses-car3;
+	changeMC.request.group_name = "mc_pses-car3";
 	if (client.call(changeMC)){
-    	ROS_INFO("Status: %d", srv.response.status);
+    	ROS_INFO("Status: %d", changeMC.response.status);
   	}else{
     	ROS_ERROR("Failed to call service ChangeMCMembership");
   	}
