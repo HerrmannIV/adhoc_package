@@ -22,8 +22,8 @@ int main (int argc, char **argv){
 	// get Parameters and print INFO
 	int loop;
 	std::string dst_car, pos;
-	nh.getParam("/sender/dst_car", dst_car);
-	nh.getParam("/sender/loop", loop);
+	nh.getParam("/rect/dst_car", dst_car);
+	nh.getParam("/rect/loop", loop);
 	ROS_INFO("loop [%d]; Dest: [%s]", loop, dst_car.c_str());
 	
 	ros::Rate loop_rate(1);
